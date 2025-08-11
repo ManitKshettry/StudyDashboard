@@ -8,6 +8,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (typeof window !== 'undefined') {
+  // @ts-ignore
+  window.supabase = supabase;
+}
 
 export type Database = {
   public: {
