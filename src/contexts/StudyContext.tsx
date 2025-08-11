@@ -1,4 +1,3 @@
-// src/contexts/StudyContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Homework, CalendarEvent, Grade } from '../types';
 import { supabase } from '../lib/supabase';
@@ -41,238 +40,72 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
-    // Check if Supabase is properly configured
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase environment variables');
-      setError('Missing Supabase configuration. Please check your environment variables.');
-      setLoading(false);
-      return;
-    }
-    
-    console.log('Supabase configuration check passed');
-    console.log('Supabase URL:', supabaseUrl);
-    console.log('Supabase Key length:', supabaseKey?.length || 0);
-
     const loadData = async () => {
       setLoading(true);
       setError(null);
-      
-      // Add timeout to prevent hanging queries
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Data loading timeout after 10 seconds')), 10000);
-      });
-      
-      const dataLoadingPromise = async () => {
-        try {
-          console.log('Loading data for user:', user.id);
-          
-          // Skip health check since we know user is authenticated
-          console.log('User is authenticated, proceeding with database tests...');
-          
-          // Test database connection first with a simple query
-          console.log('Testing database connection with simple query...');
-          
-          // Query profiles table with timeout
-          let testData: any = null;
-          let testError: any = null;
-          
-          try {
-            const startTime = Date.now();
-            
-            // Try to query profiles with a timeout
-            const profilesPromise = supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', user.id)
-              .single();
-              
-            // Add a timeout
-            const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Profiles query timeout after 3 seconds')), 3000);
-            });
-            
-            const result = await Promise.race([profilesPromise, timeoutPromise]) as any;
-            
-            const queryTime = Date.now() - startTime;
-            console.log(`Profiles query completed in ${queryTime}ms`);
-            
-            testData = result.data;
-            testError = result.error;
-          } catch (error) {
-            console.error('Profiles query failed or timed out:', error);
-            
-            // If it's a timeout, try to create the profile manually
-            if (error instanceof Error && error.message.includes('timeout')) {
-              console.log('Profiles query timed out, trying to create profile manually...');
-              
-              try {
-                const { data: createResult, error: createError } = await supabase
-                  .from('profiles')
-                  .insert({
-                    id: user.id,
-                    email: user.email!,
-                    full_name: user.user_metadata?.full_name || user.user_metadata?.name || ''
-                  })
-                  .select()
-                  .single();
-                  
-                if (createError) {
-                  console.error('Failed to create profile manually:', createError);
-                  throw new Error(`Failed to create profile: ${createError.message}`);
-                }
-                
-                console.log('Profile created manually:', createResult);
-                testData = createResult;
-                testError = null;
-              } catch (createError) {
-                console.error('Manual profile creation failed:', createError);
-                testError = createError;
-              }
-            } else {
-              testError = error;
-            }
-          }
-            
-          if (testError) {
-            console.error('Database connection test failed:', testError);
-            throw new Error(`Database connection failed: ${testError.message}`);
-          }
-          
-          console.log('Database connection test successful:', testData);
-          
-          // Check if user profile exists
-          if (!testData) {
-            console.log('User profile not found, this might be the issue');
-            throw new Error('User profile not found in database. This suggests the trigger to create profiles is not working.');
-          }
-          
-          console.log('User profile exists:', testData);
-          
-          // If we get here, the profile exists, so let's test a simple query to other tables
-          console.log('Testing simple queries to other tables...');
-          
-          // Test with a simple count query first
-          const { count: hwCount, error: hwCountError } = await supabase
-            .from('homework')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id);
-            
-          if (hwCountError) {
-            console.error('Homework count query failed:', hwCountError);
-            throw new Error(`Homework table access failed: ${hwCountError.message}`);
-          }
-          
-          console.log('Homework count query successful, count:', hwCount);
-          
-          // Now load the actual data
-          console.log('Loading homework data...');
-          const { data: hwData, error: hwError } = await supabase
-            .from('homework')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('due_date', { ascending: true });
-            
-          if (hwError) {
-            console.error('Error loading homework:', hwError);
-            throw new Error(`Failed to load homework: ${hwError.message}`);
-          }
-          
-          console.log('Homework data loaded:', hwData?.length || 0, 'items');
-          
-          if (hwData) {
-            setHomework(
-              hwData.map(hw => ({
-                id: hw.id,
-                subject: hw.subject,
-                assignment: hw.assignment,
-                dueDate: hw.due_date,
-                assignedDate: hw.assigned_date,
-                status: hw.status,
-                priority: hw.priority,
-                notes: hw.notes,
-                submissionLink: hw.submission_link,
-              }))
-            );
-          }
-
-          // Load calendar events
-          console.log('Loading calendar events data...');
-          const { data: evData, error: evError } = await supabase
-            .from('calendar_events')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('date', { ascending: true });
-            
-          if (evError) {
-            console.error('Error loading calendar events:', evError);
-            throw new Error(`Failed to load calendar events: ${evError.message}`);
-          }
-          
-          console.log('Calendar events data loaded:', evData?.length || 0, 'items');
-          
-          if (evData) {
-            setCalendarEvents(
-              evData.map(ev => ({
-                id: ev.id,
-                date: ev.date,
-                time: ev.time,
-                eventType: ev.event_type,
-                subject: ev.subject,
-                description: ev.description,
-                location: ev.location,
-                reminderSet: ev.reminder_set,
-                preparationChecklist: ev.preparation_checklist,
-              }))
-            );
-          }
-
-          // Load grades
-          console.log('Loading grades data...');
-          const { data: grData, error: grError } = await supabase
-            .from('grades')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('date_graded', { ascending: false });
-            
-          if (grError) {
-            console.error('Error loading grades:', grError);
-            throw new Error(`Failed to load grades: ${grError.message}`);
-          }
-          
-          console.log('Grades data loaded:', grData?.length || 0, 'items');
-          
-          if (grData) {
-            setGrades(
-              grData.map(g => ({
-                id: g.id,
-                subject: g.subject,
-                assessmentName: g.assessment_name,
-                type: g.type,
-                maxMarks: g.max_marks,
-                marksObtained: g.marks_obtained,
-                grade: g.grade,
-                dateGraded: g.date_graded,
-                feedback: g.feedback,
-                weight: g.weight,
-              }))
-            );
-          }
-          
-          console.log('All data loaded successfully!');
-        } catch (error) {
-          console.error('Error loading data:', error);
-          throw error;
-        }
-      };
-      
       try {
-        await Promise.race([dataLoadingPromise(), timeoutPromise]);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load data');
+        const { data: hwData, error: hwError } = await supabase
+          .from('homework')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('due_date', { ascending: true });
+        if (hwError) throw hwError;
+        if (hwData) {
+          setHomework(hwData.map(hw => ({
+            id: hw.id,
+            subject: hw.subject,
+            assignment: hw.assignment,
+            dueDate: hw.due_date,
+            assignedDate: hw.assigned_date,
+            status: hw.status,
+            priority: hw.priority,
+            notes: hw.notes,
+            submissionLink: hw.submission_link,
+          })));
+        }
+
+        const { data: evData, error: evError } = await supabase
+          .from('calendar_events')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: true });
+        if (evError) throw evError;
+        if (evData) {
+          setCalendarEvents(evData.map(ev => ({
+            id: ev.id,
+            date: ev.date,
+            time: ev.time,
+            eventType: ev.event_type,
+            subject: ev.subject,
+            description: ev.description,
+            location: ev.location,
+            reminderSet: ev.reminder_set,
+            preparationChecklist: ev.preparation_checklist,
+          })));
+        }
+
+        const { data: grData, error: grError } = await supabase
+          .from('grades')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date_graded', { ascending: false });
+        if (grError) throw grError;
+        if (grData) {
+          setGrades(grData.map(g => ({
+            id: g.id,
+            subject: g.subject,
+            assessmentName: g.assessment_name,
+            type: g.type,
+            maxMarks: g.max_marks,
+            marksObtained: g.marks_obtained,
+            grade: g.grade,
+            dateGraded: g.date_graded,
+            feedback: g.feedback,
+            weight: g.weight,
+          })));
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load data');
       } finally {
         setLoading(false);
       }
@@ -299,20 +132,17 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .select()
       .single();
     if (data && !error) {
-      setHomework(prev => [
-        ...prev,
-        {
-          id: data.id,
-          subject: data.subject,
-          assignment: data.assignment,
-          dueDate: data.due_date,
-          assignedDate: data.assigned_date,
-          status: data.status,
-          priority: data.priority,
-          notes: data.notes,
-          submissionLink: data.submission_link,
-        },
-      ]);
+      setHomework(prev => [...prev, {
+        id: data.id,
+        subject: data.subject,
+        assignment: data.assignment,
+        dueDate: data.due_date,
+        assignedDate: data.assigned_date,
+        status: data.status,
+        priority: data.priority,
+        notes: data.notes,
+        submissionLink: data.submission_link,
+      }]);
     }
   };
 
@@ -344,7 +174,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-    if (!error) setHomework(prev => prev.filter(hw => hw.id !== id));
+    if (!error) {
+      setHomework(prev => prev.filter(hw => hw.id !== id));
+    }
   };
 
   const addCalendarEvent = async (newEv: CalendarEvent) => {
@@ -365,20 +197,17 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .select()
       .single();
     if (data && !error) {
-      setCalendarEvents(prev => [
-        ...prev,
-        {
-          id: data.id,
-          date: data.date,
-          time: data.time,
-          eventType: data.event_type,
-          subject: data.subject,
-          description: data.description,
-          location: data.location,
-          reminderSet: data.reminder_set,
-          preparationChecklist: data.preparation_checklist,
-        },
-      ]);
+      setCalendarEvents(prev => [...prev, {
+        id: data.id,
+        date: data.date,
+        time: data.time,
+        eventType: data.event_type,
+        subject: data.subject,
+        description: data.description,
+        location: data.location,
+        reminderSet: data.reminder_set,
+        preparationChecklist: data.preparation_checklist,
+      }]);
     }
   };
 
@@ -410,7 +239,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-    if (!error) setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
+    if (!error) {
+      setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
+    }
   };
 
   const addGrade = async (newG: Grade) => {
@@ -432,21 +263,18 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .select()
       .single();
     if (data && !error) {
-      setGrades(prev => [
-        ...prev,
-        {
-          id: data.id,
-          subject: data.subject,
-          assessmentName: data.assessment_name,
-          type: data.type,
-          maxMarks: data.max_marks,
-          marksObtained: data.marks_obtained,
-          grade: data.grade,
-          dateGraded: data.date_graded,
-          feedback: data.feedback,
-          weight: data.weight,
-        },
-      ]);
+      setGrades(prev => [...prev, {
+        id: data.id,
+        subject: data.subject,
+        assessmentName: data.assessment_name,
+        type: data.type,
+        maxMarks: data.max_marks,
+        marksObtained: data.marks_obtained,
+        grade: data.grade,
+        dateGraded: data.date_graded,
+        feedback: data.feedback,
+        weight: data.weight,
+      }]);
     }
   };
 
@@ -479,7 +307,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-    if (!error) setGrades(prev => prev.filter(g => g.id !== id));
+    if (!error) {
+      setGrades(prev => prev.filter(g => g.id !== id));
+    }
   };
 
   const value: StudyContextType = {
