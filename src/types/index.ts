@@ -34,35 +34,3 @@ export interface Grade {
   feedback: string;
   weight: number;
 }
-
-export interface TimetableSlot {
-  day: string;
-  time: string;
-  subject: string;
-  notes?: string;
-}
-
-export interface Subject {
-  name: string;
-  color: string;
-}
-
-export const SUBJECTS: Subject[] = [
-  { name: 'Math', color: '#ff8800ff' },
-  { name: 'English', color: '#3510b9ff' },
-  // { name: 'English', color: '#10B981' },
-  { name: 'Physics', color: '#e6b71eff' },
-  { name: 'Chemistry', color: '#1916cfff' },
-  { name: 'Biology', color: '#ccc016ff' },
-  { name: 'History', color: '#F59E0B' },
-  { name: 'Geography', color: '#7dbe14ff' },
-  { name: 'Computer', color: '#7706d4ff' },
-  
-];
-
-export const TIME_SLOTS = [
-  '2:00-2:30', '2:30-4:00', '4:00-5:00', '5:00-6:30',
-  '6:30-8:00', '8:00-9:30', '9:30-11:00'
-];
-
-export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

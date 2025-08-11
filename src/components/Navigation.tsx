@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, BookOpen, Calendar, Trophy, Clock, LogOut } from 'lucide-react';
+import { Home, BookOpen, Calendar, Trophy, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
@@ -15,7 +15,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
     { id: 'homework', label: 'Homework', icon: BookOpen },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'grades', label: 'Grades', icon: Trophy },
-    { id: 'timetable', label: 'Timetable', icon: Clock },
   ];
 
   const handleSignOut = async () => {

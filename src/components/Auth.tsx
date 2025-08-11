@@ -187,10 +187,7 @@ const Auth: React.FC = () => {
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
               Log grades with performance analytics
             </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-              Organize your weekly timetable
-            </li>
+
           </ul>
         </div>
       </div>

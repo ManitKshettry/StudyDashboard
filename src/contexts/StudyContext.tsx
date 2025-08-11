@@ -1,6 +1,6 @@
 // src/contexts/StudyContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Homework, CalendarEvent, Grade, TimetableSlot } from '../types';
+import { Homework, CalendarEvent, Grade } from '../types';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -8,7 +8,6 @@ interface StudyContextType {
   homework: Homework[];
   calendarEvents: CalendarEvent[];
   grades: Grade[];
-  timetable: TimetableSlot[];
   addHomework: (hw: Homework) => void;
   updateHomework: (id: string, updates: Partial<Homework>) => void;
   deleteHomework: (id: string) => void;
@@ -18,7 +17,6 @@ interface StudyContextType {
   addGrade: (grade: Grade) => void;
   updateGrade: (id: string, updates: Partial<Grade>) => void;
   deleteGrade: (id: string) => void;
-  updateTimetable: (slots: TimetableSlot[]) => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
@@ -28,14 +26,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [homework, setHomework] = useState<Homework[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
-  const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
 
   useEffect(() => {
     if (!user) {
       setHomework([]);
       setCalendarEvents([]);
       setGrades([]);
-      setTimetable([]);
       return;
     }
 
@@ -104,22 +100,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               dateGraded: g.date_graded,
               feedback: g.feedback,
               weight: g.weight,
-            }))
-          );
-        }
-
-        // Timetable
-        const { data: ttData } = await supabase
-          .from('timetable')
-          .select('*')
-          .eq('user_id', user.id);
-        if (ttData) {
-          setTimetable(
-            ttData.map(slot => ({
-              day: slot.day,
-              time: slot.time,
-              subject: slot.subject,
-              notes: slot.notes,
             }))
           );
         }
@@ -332,45 +312,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!error) setGrades(prev => prev.filter(g => g.id !== id));
   };
 
-  const updateTimetable = async (slots: TimetableSlot[]) => {
-    if (!user) return;
-    try {
-      // delete old
-      const { error: delErr } = await supabase
-        .from('timetable')
-        .delete()
-        .eq('user_id', user.id);
-      if (delErr) {
-        console.error('Delete timetable error:', delErr);
-        return;
-      }
-      // insert new
-      if (slots.length) {
-        const { error: insErr } = await supabase.from('timetable').insert(
-          slots.map(s => ({
-            user_id: user.id,
-            day: s.day,
-            time: s.time,
-            subject: s.subject,
-            notes: s.notes,
-          }))
-        );
-        if (insErr) {
-          console.error('Insert timetable error:', insErr);
-          return;
-        }
-      }
-      setTimetable(slots);
-    } catch (e) {
-      console.error('updateTimetable failed:', e);
-    }
-  };
-
   const value: StudyContextType = {
     homework,
     calendarEvents,
     grades,
-    timetable,
     addHomework,
     updateHomework,
     deleteHomework,
@@ -380,7 +325,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     addGrade,
     updateGrade,
     deleteGrade,
-    updateTimetable,
   };
 
   return <StudyContext.Provider value={value}>{children}</StudyContext.Provider>;

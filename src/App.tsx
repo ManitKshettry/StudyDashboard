@@ -7,7 +7,6 @@ import Dashboard from './components/Dashboard';
 import HomeworkTracker from './components/HomeworkTracker';
 import CalendarView from './components/CalendarView';
 import GradesLog from './components/GradesLog';
-import Timetable from './components/Timetable';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -38,8 +37,6 @@ const AppContent: React.FC = () => {
         return <CalendarView />;
       case 'grades':
         return <GradesLog />;
-      case 'timetable':
-        return <Timetable />;
       default:
         return <Dashboard />;
     }

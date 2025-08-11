@@ -21,36 +21,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Create or update profile in Supabase
   const createOrUpdateProfile = async (u: User) => {
-    await supabase.from('profiles').upsert(
-      { id: u.id, email: u.email!, full_name: u.user_metadata?.full_name || u.user_metadata?.name },
-      { onConflict: 'id' }
-    );
+    try {
+      await supabase.from('profiles').upsert(
+        { id: u.id, email: u.email!, full_name: u.user_metadata?.full_name || u.user_metadata?.name },
+        { onConflict: 'id' }
+      );
+    } catch (error) {
+      console.error('Error creating/updating profile:', error);
+    }
   };
 
   useEffect(() => {
-    // 1) Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            await createOrUpdateProfile(session.user);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
+      console.log('Auth state changed:', event, session?.user?.email);
+      
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) createOrUpdateProfile(session.user);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        await createOrUpdateProfile(session.user);
+      }
+      
       setLoading(false);
     });
 
-    // 2) Listen for auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (evt, sess) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (evt === 'SIGNED_IN' && sess?.user) await createOrUpdateProfile(sess.user);
-      setLoading(false);
-    });
+    initializeAuth();
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = (email: string, password: string) => supabase.auth.signInWithPassword({ email, password });
-  const signUp = (email: string, password: string) => supabase.auth.signUp({ email, password });
-  const signInWithGoogle = () => supabase.auth.signInWithOAuth({ provider: 'google' });
-  const signOut = () => supabase.auth.signOut();
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { error };
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      return { error };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { error };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      return { error };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { error };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signInWithGoogle, signOut }}>
