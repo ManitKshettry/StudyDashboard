@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
+import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
 import { getDaysLeft, isOverdue, formatDate } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, ExternalLink, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 

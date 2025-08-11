@@ -28,7 +28,7 @@ const AppContent: React.FC = () => {
     return <Auth />;
   }
 
-  const renderActiveComponent = () => {
+  const renderActiveTab = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
@@ -49,7 +49,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderActiveComponent()}
+        {renderActiveTab()}
       </main>
     </div>
   );

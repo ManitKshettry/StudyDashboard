@@ -2,6 +2,7 @@ import React from 'react';
 import { useStudy } from '../contexts/StudyContext';
 import { getNextUpcoming, getDaysLeft, isOverdue } from '../utils/dateUtils';
 import { calculateWeightedAverage } from '../utils/gradeUtils';
+import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
 import CountdownWidget from './widgets/CountdownWidget';
 import StatsWidget from './widgets/StatsWidget';
 import { BookOpen, Calendar, Trophy, Clock, CheckCircle } from 'lucide-react';

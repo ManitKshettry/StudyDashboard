@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
+import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
 import { calculatePercentage, getLetterGrade, calculateWeightedAverage, calculateSubjectAverage, getGradeColor } from '../utils/gradeUtils';
 import { Plus, Edit2, Trash2, TrendingUp, Trophy } from 'lucide-react';
 

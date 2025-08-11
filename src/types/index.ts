@@ -65,4 +65,4 @@ export const TIME_SLOTS = [
   '6:30-8:00', '8:00-9:30', '9:30-11:00'
 ];
 
-export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saterday','Sunday'];
+export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
