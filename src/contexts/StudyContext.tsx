@@ -81,20 +81,59 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           
           try {
             const startTime = Date.now();
-            const result = await supabase
+            
+            // Try to query profiles with a timeout
+            const profilesPromise = supabase
               .from('profiles')
               .select('id')
               .eq('id', user.id)
               .single();
               
+            // Add a timeout
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Profiles query timeout after 3 seconds')), 3000);
+            });
+            
+            const result = await Promise.race([profilesPromise, timeoutPromise]) as any;
+            
             const queryTime = Date.now() - startTime;
             console.log(`Profiles query completed in ${queryTime}ms`);
             
             testData = result.data;
             testError = result.error;
           } catch (error) {
-            console.error('Profiles query threw an error:', error);
-            testError = error;
+            console.error('Profiles query failed or timed out:', error);
+            
+            // If it's a timeout, try to create the profile manually
+            if (error instanceof Error && error.message.includes('timeout')) {
+              console.log('Profiles query timed out, trying to create profile manually...');
+              
+              try {
+                const { data: createResult, error: createError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: user.id,
+                    email: user.email!,
+                    full_name: user.user_metadata?.full_name || user.user_metadata?.name || ''
+                  })
+                  .select()
+                  .single();
+                  
+                if (createError) {
+                  console.error('Failed to create profile manually:', createError);
+                  throw new Error(`Failed to create profile: ${createError.message}`);
+                }
+                
+                console.log('Profile created manually:', createResult);
+                testData = createResult;
+                testError = null;
+              } catch (createError) {
+                console.error('Manual profile creation failed:', createError);
+                testError = createError;
+              }
+            } else {
+              testError = error;
+            }
           }
             
           if (testError) {
