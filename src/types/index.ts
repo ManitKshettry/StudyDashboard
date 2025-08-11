@@ -34,3 +34,19 @@ export interface Grade {
   feedback: string;
   weight: number;
 }
+
+export interface Subject {
+  name: string;
+  color: string;
+}
+
+export const SUBJECTS: Subject[] = [
+  { name: 'Math', color: '#ff8800ff' },
+  { name: 'English', color: '#3510b9ff' },
+  { name: 'Physics', color: '#e6b71eff' },
+  { name: 'Chemistry', color: '#1916cfff' },
+  { name: 'Biology', color: '#ccc016ff' },
+  { name: 'History', color: '#F59E0B' },
+  { name: 'Geography', color: '#7dbe14ff' },
+  { name: 'Computer', color: '#7706d4ff' },
+];
