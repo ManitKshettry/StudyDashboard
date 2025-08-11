@@ -1,3 +1,4 @@
+// src/contexts/StudyContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Homework, CalendarEvent, Grade, TimetableSlot } from '../types';
 import { supabase } from '../lib/supabase';
@@ -8,7 +9,7 @@ interface StudyContextType {
   calendarEvents: CalendarEvent[];
   grades: Grade[];
   timetable: TimetableSlot[];
-  addHomework: (homework: Homework) => void;
+  addHomework: (hw: Homework) => void;
   updateHomework: (id: string, updates: Partial<Homework>) => void;
   deleteHomework: (id: string) => void;
   addCalendarEvent: (event: CalendarEvent) => void;
@@ -29,10 +30,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [grades, setGrades] = useState<Grade[]>([]);
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
 
-  // Load data from Supabase when user is authenticated
   useEffect(() => {
     if (!user) {
-      // Clear data when user logs out
       setHomework([]);
       setCalendarEvents([]);
       setGrades([]);
@@ -42,130 +41,133 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const loadData = async () => {
       try {
-        // Load homework
-        const { data: homeworkData } = await supabase
+        // Homework
+        const { data: hwData } = await supabase
           .from('homework')
           .select('*')
           .eq('user_id', user.id)
           .order('due_date', { ascending: true });
-
-        if (homeworkData) {
-          setHomework(homeworkData.map(hw => ({
-            id: hw.id,
-            subject: hw.subject,
-            assignment: hw.assignment,
-            dueDate: hw.due_date,
-            assignedDate: hw.assigned_date,
-            status: hw.status,
-            priority: hw.priority,
-            notes: hw.notes,
-            submissionLink: hw.submission_link,
-          })));
+        if (hwData) {
+          setHomework(
+            hwData.map(hw => ({
+              id: hw.id,
+              subject: hw.subject,
+              assignment: hw.assignment,
+              dueDate: hw.due_date,
+              assignedDate: hw.assigned_date,
+              status: hw.status,
+              priority: hw.priority,
+              notes: hw.notes,
+              submissionLink: hw.submission_link,
+            }))
+          );
         }
 
-        // Load calendar events
-        const { data: eventsData } = await supabase
+        // Calendar events
+        const { data: evData } = await supabase
           .from('calendar_events')
           .select('*')
           .eq('user_id', user.id)
           .order('date', { ascending: true });
-
-        if (eventsData) {
-          setCalendarEvents(eventsData.map(event => ({
-            id: event.id,
-            date: event.date,
-            time: event.time,
-            eventType: event.event_type,
-            subject: event.subject,
-            description: event.description,
-            location: event.location,
-            reminderSet: event.reminder_set,
-            preparationChecklist: event.preparation_checklist,
-          })));
+        if (evData) {
+          setCalendarEvents(
+            evData.map(ev => ({
+              id: ev.id,
+              date: ev.date,
+              time: ev.time,
+              eventType: ev.event_type,
+              subject: ev.subject,
+              description: ev.description,
+              location: ev.location,
+              reminderSet: ev.reminder_set,
+              preparationChecklist: ev.preparation_checklist,
+            }))
+          );
         }
 
-        // Load grades
-        const { data: gradesData } = await supabase
+        // Grades
+        const { data: grData } = await supabase
           .from('grades')
           .select('*')
           .eq('user_id', user.id)
           .order('date_graded', { ascending: false });
-
-        if (gradesData) {
-          setGrades(gradesData.map(grade => ({
-            id: grade.id,
-            subject: grade.subject,
-            assessmentName: grade.assessment_name,
-            type: grade.type,
-            maxMarks: grade.max_marks,
-            marksObtained: grade.marks_obtained,
-            grade: grade.grade,
-            dateGraded: grade.date_graded,
-            feedback: grade.feedback,
-            weight: grade.weight,
-          })));
+        if (grData) {
+          setGrades(
+            grData.map(g => ({
+              id: g.id,
+              subject: g.subject,
+              assessmentName: g.assessment_name,
+              type: g.type,
+              maxMarks: g.max_marks,
+              marksObtained: g.marks_obtained,
+              grade: g.grade,
+              dateGraded: g.date_graded,
+              feedback: g.feedback,
+              weight: g.weight,
+            }))
+          );
         }
 
-        // Load timetable
-        const { data: timetableData } = await supabase
+        // Timetable
+        const { data: ttData } = await supabase
           .from('timetable')
           .select('*')
           .eq('user_id', user.id);
-
-        if (timetableData) {
-          setTimetable(timetableData.map(slot => ({
-            day: slot.day,
-            time: slot.time,
-            subject: slot.subject,
-            notes: slot.notes,
-          })));
+        if (ttData) {
+          setTimetable(
+            ttData.map(slot => ({
+              day: slot.day,
+              time: slot.time,
+              subject: slot.subject,
+              notes: slot.notes,
+            }))
+          );
         }
       } catch (error) {
-        console.error('Error loading data from Supabase:', error);
+        console.error('Error loading data:', error);
       }
     };
 
     loadData();
   }, [user]);
 
-  // Homework functions
-  const addHomework = async (newHomework: Homework) => {
+  const addHomework = async (newHw: Homework) => {
     if (!user) return;
-
     const { data, error } = await supabase
       .from('homework')
       .insert({
         user_id: user.id,
-        subject: newHomework.subject,
-        assignment: newHomework.assignment,
-        due_date: newHomework.dueDate,
-        assigned_date: newHomework.assignedDate,
-        status: newHomework.status,
-        priority: newHomework.priority,
-        notes: newHomework.notes,
-        submission_link: newHomework.submissionLink,
+        subject: newHw.subject,
+        assignment: newHw.assignment,
+        due_date: newHw.dueDate,
+        assigned_date: newHw.assignedDate,
+        status: newHw.status,
+        priority: newHw.priority,
+        notes: newHw.notes,
+        submission_link: newHw.submissionLink,
       })
       .select()
       .single();
-
     if (data && !error) {
-      setHomework(prev => [...prev, {
-        id: data.id,
-        subject: data.subject,
-        assignment: data.assignment,
-        dueDate: data.due_date,
-        assignedDate: data.assigned_date,
-        status: data.status,
-        priority: data.priority,
-        notes: data.notes,
-        submissionLink: data.submission_link,
-      }]);
+      setHomework(prev => [
+        ...prev,
+        {
+          id: data.id,
+          subject: data.subject,
+          assignment: data.assignment,
+          dueDate: data.due_date,
+          assignedDate: data.assigned_date,
+          status: data.status,
+          priority: data.priority,
+          notes: data.notes,
+          submissionLink: data.submission_link,
+        },
+      ]);
     }
   };
 
   const updateHomework = async (id: string, updates: Partial<Homework>) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('homework')
       .update({
@@ -180,64 +182,58 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
       .eq('id', id)
       .eq('user_id', user.id);
-
     if (!error) {
-      setHomework(prev => prev.map(hw => hw.id === id ? { ...hw, ...updates } : hw));
+      setHomework(prev => prev.map(hw => (hw.id === id ? { ...hw, ...updates } : hw)));
     }
   };
 
   const deleteHomework = async (id: string) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('homework')
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-
-    if (!error) {
-      setHomework(prev => prev.filter(hw => hw.id !== id));
-    }
+    if (!error) setHomework(prev => prev.filter(hw => hw.id !== id));
   };
 
-  // Calendar functions
-  const addCalendarEvent = async (newEvent: CalendarEvent) => {
+  const addCalendarEvent = async (newEv: CalendarEvent) => {
     if (!user) return;
-
     const { data, error } = await supabase
       .from('calendar_events')
       .insert({
         user_id: user.id,
-        date: newEvent.date,
-        time: newEvent.time,
-        event_type: newEvent.eventType,
-        subject: newEvent.subject,
-        description: newEvent.description,
-        location: newEvent.location,
-        reminder_set: newEvent.reminderSet,
-        preparation_checklist: newEvent.preparationChecklist,
+        date: newEv.date,
+        time: newEv.time,
+        event_type: newEv.eventType,
+        subject: newEv.subject,
+        description: newEv.description,
+        location: newEv.location,
+        reminder_set: newEv.reminderSet,
+        preparation_checklist: newEv.preparationChecklist,
       })
       .select()
       .single();
-
     if (data && !error) {
-      setCalendarEvents(prev => [...prev, {
-        id: data.id,
-        date: data.date,
-        time: data.time,
-        eventType: data.event_type,
-        subject: data.subject,
-        description: data.description,
-        location: data.location,
-        reminderSet: data.reminder_set,
-        preparationChecklist: data.preparation_checklist,
-      }]);
+      setCalendarEvents(prev => [
+        ...prev,
+        {
+          id: data.id,
+          date: data.date,
+          time: data.time,
+          eventType: data.event_type,
+          subject: data.subject,
+          description: data.description,
+          location: data.location,
+          reminderSet: data.reminder_set,
+          preparationChecklist: data.preparation_checklist,
+        },
+      ]);
     }
   };
 
   const updateCalendarEvent = async (id: string, updates: Partial<CalendarEvent>) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('calendar_events')
       .update({
@@ -252,66 +248,60 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
       .eq('id', id)
       .eq('user_id', user.id);
-
     if (!error) {
-      setCalendarEvents(prev => prev.map(event => event.id === id ? { ...event, ...updates } : event));
+      setCalendarEvents(prev => prev.map(ev => (ev.id === id ? { ...ev, ...updates } : ev)));
     }
   };
 
   const deleteCalendarEvent = async (id: string) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('calendar_events')
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-
-    if (!error) {
-      setCalendarEvents(prev => prev.filter(event => event.id !== id));
-    }
+    if (!error) setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
   };
 
-  // Grades functions
-  const addGrade = async (newGrade: Grade) => {
+  const addGrade = async (newG: Grade) => {
     if (!user) return;
-
     const { data, error } = await supabase
       .from('grades')
       .insert({
         user_id: user.id,
-        subject: newGrade.subject,
-        assessment_name: newGrade.assessmentName,
-        type: newGrade.type,
-        max_marks: newGrade.maxMarks,
-        marks_obtained: newGrade.marksObtained,
-        grade: newGrade.grade,
-        date_graded: newGrade.dateGraded,
-        feedback: newGrade.feedback,
-        weight: newGrade.weight,
+        subject: newG.subject,
+        assessment_name: newG.assessmentName,
+        type: newG.type,
+        max_marks: newG.maxMarks,
+        marks_obtained: newG.marksObtained,
+        grade: newG.grade,
+        date_graded: newG.dateGraded,
+        feedback: newG.feedback,
+        weight: newG.weight,
       })
       .select()
       .single();
-
     if (data && !error) {
-      setGrades(prev => [...prev, {
-        id: data.id,
-        subject: data.subject,
-        assessmentName: data.assessment_name,
-        type: data.type,
-        maxMarks: data.max_marks,
-        marksObtained: data.marks_obtained,
-        grade: data.grade,
-        dateGraded: data.date_graded,
-        feedback: data.feedback,
-        weight: data.weight,
-      }]);
+      setGrades(prev => [
+        ...prev,
+        {
+          id: data.id,
+          subject: data.subject,
+          assessmentName: data.assessment_name,
+          type: data.type,
+          maxMarks: data.max_marks,
+          marksObtained: data.marks_obtained,
+          grade: data.grade,
+          dateGraded: data.date_graded,
+          feedback: data.feedback,
+          weight: data.weight,
+        },
+      ]);
     }
   };
 
   const updateGrade = async (id: string, updates: Partial<Grade>) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('grades')
       .update({
@@ -327,66 +317,52 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
       .eq('id', id)
       .eq('user_id', user.id);
-
     if (!error) {
-      setGrades(prev => prev.map(grade => grade.id === id ? { ...grade, ...updates } : grade));
+      setGrades(prev => prev.map(g => (g.id === id ? { ...g, ...updates } : g)));
     }
   };
 
   const deleteGrade = async (id: string) => {
     if (!user) return;
-
     const { error } = await supabase
       .from('grades')
       .delete()
       .eq('id', id)
       .eq('user_id', user.id);
-
-    if (!error) {
-      setGrades(prev => prev.filter(grade => grade.id !== id));
-    }
+    if (!error) setGrades(prev => prev.filter(g => g.id !== id));
   };
 
-  // ✅ FIXED: Timetable functions
   const updateTimetable = async (slots: TimetableSlot[]) => {
     if (!user) return;
-
     try {
-      // Delete existing timetable
-      const { error: deleteError } = await supabase
+      // delete old
+      const { error: delErr } = await supabase
         .from('timetable')
         .delete()
         .eq('user_id', user.id);
-
-      if (deleteError) {
-        console.error('Error deleting timetable:', deleteError);
+      if (delErr) {
+        console.error('Delete timetable error:', delErr);
         return;
       }
-
-      // Insert new timetable slots
-      if (slots.length > 0) {
-        const { error: insertError } = await supabase
-          .from('timetable')
-          .insert(
-            slots.map(slot => ({
-              user_id: user.id,
-              day: slot.day,
-              time: slot.time,
-              subject: slot.subject,
-              notes: slot.notes,
-            }))
-          );
-
-        if (insertError) {
-          console.error('Error inserting timetable:', insertError);
+      // insert new
+      if (slots.length) {
+        const { error: insErr } = await supabase.from('timetable').insert(
+          slots.map(s => ({
+            user_id: user.id,
+            day: s.day,
+            time: s.time,
+            subject: s.subject,
+            notes: s.notes,
+          }))
+        );
+        if (insErr) {
+          console.error('Insert timetable error:', insErr);
           return;
         }
       }
-      
-      // ✅ Update local state after successful DB operation
       setTimetable(slots);
-    } catch (error) {
-      console.error('Error updating timetable:', error);
+    } catch (e) {
+      console.error('updateTimetable failed:', e);
     }
   };
 
@@ -411,9 +387,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 export const useStudy = () => {
-  const context = useContext(StudyContext);
-  if (context === undefined) {
-    throw new Error('useStudy must be used within a StudyProvider');
-  }
-  return context;
+  const ctx = useContext(StudyContext);
+  if (!ctx) throw new Error('useStudy must be used within StudyProvider');
+  return ctx;
 };
