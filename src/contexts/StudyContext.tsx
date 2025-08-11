@@ -41,6 +41,21 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
+    // Check if Supabase is properly configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables');
+      setError('Missing Supabase configuration. Please check your environment variables.');
+      setLoading(false);
+      return;
+    }
+    
+    console.log('Supabase configuration check passed');
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Supabase Key length:', supabaseKey?.length || 0);
+
     const loadData = async () => {
       setLoading(true);
       setError(null);
@@ -54,13 +69,24 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           console.log('Loading data for user:', user.id);
           
-          // Test database connection first
-          console.log('Testing database connection...');
+          // Basic Supabase health check
+          console.log('Performing Supabase health check...');
+          const { data: healthData, error: healthError } = await supabase.auth.getUser();
+          
+          if (healthError) {
+            console.error('Supabase health check failed:', healthError);
+            throw new Error(`Supabase health check failed: ${healthError.message}`);
+          }
+          
+          console.log('Supabase health check successful:', healthData);
+          
+          // Test database connection first with a simple query
+          console.log('Testing database connection with simple query...');
           const { data: testData, error: testError } = await supabase
             .from('profiles')
-            .select('id, email')
+            .select('id')
             .eq('id', user.id)
-            .limit(1);
+            .single();
             
           if (testError) {
             console.error('Database connection test failed:', testError);
@@ -68,6 +94,53 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
           
           console.log('Database connection test successful:', testData);
+          
+          // Test if we can access the other tables
+          console.log('Testing table access...');
+          
+          // Test homework table access
+          const { data: hwTest, error: hwTestError } = await supabase
+            .from('homework')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+            
+          if (hwTestError) {
+            console.error('Homework table access test failed:', hwTestError);
+            throw new Error(`Homework table access failed: ${hwTestError.message}`);
+          }
+          
+          console.log('Homework table access test successful:', hwTest);
+          
+          // Test calendar events table access
+          const { data: evTest, error: evTestError } = await supabase
+            .from('calendar_events')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+            
+          if (evTestError) {
+            console.error('Calendar events table access test failed:', evTestError);
+            throw new Error(`Calendar events table access failed: ${evTestError.message}`);
+          }
+          
+          console.log('Calendar events table access test successful:', evTest);
+          
+          // Test grades table access
+          const { data: grTest, error: grTestError } = await supabase
+            .from('grades')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1);
+            
+          if (grTestError) {
+            console.error('Grades table access test failed:', grTestError);
+            throw new Error(`Grades table access failed: ${grTestError.message}`);
+          }
+          
+          console.log('Grades table access test successful:', grTest);
+          
+          console.log('All table access tests passed, proceeding with data loading...');
           
           // Homework
           console.log('Starting homework query...');
