@@ -69,24 +69,33 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           console.log('Loading data for user:', user.id);
           
-          // Basic Supabase health check
-          console.log('Performing Supabase health check...');
-          const { data: healthData, error: healthError } = await supabase.auth.getUser();
-          
-          if (healthError) {
-            console.error('Supabase health check failed:', healthError);
-            throw new Error(`Supabase health check failed: ${healthError.message}`);
-          }
-          
-          console.log('Supabase health check successful:', healthData);
+          // Skip health check since we know user is authenticated
+          console.log('User is authenticated, proceeding with database tests...');
           
           // Test database connection first with a simple query
           console.log('Testing database connection with simple query...');
-          const { data: testData, error: testError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', user.id)
-            .single();
+          
+          // Query profiles table with timeout
+          let testData: any = null;
+          let testError: any = null;
+          
+          try {
+            const startTime = Date.now();
+            const result = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', user.id)
+              .single();
+              
+            const queryTime = Date.now() - startTime;
+            console.log(`Profiles query completed in ${queryTime}ms`);
+            
+            testData = result.data;
+            testError = result.error;
+          } catch (error) {
+            console.error('Profiles query threw an error:', error);
+            testError = error;
+          }
             
           if (testError) {
             console.error('Database connection test failed:', testError);
@@ -95,55 +104,32 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           
           console.log('Database connection test successful:', testData);
           
-          // Test if we can access the other tables
-          console.log('Testing table access...');
+          // Check if user profile exists
+          if (!testData) {
+            console.log('User profile not found, this might be the issue');
+            throw new Error('User profile not found in database. This suggests the trigger to create profiles is not working.');
+          }
           
-          // Test homework table access
-          const { data: hwTest, error: hwTestError } = await supabase
+          console.log('User profile exists:', testData);
+          
+          // If we get here, the profile exists, so let's test a simple query to other tables
+          console.log('Testing simple queries to other tables...');
+          
+          // Test with a simple count query first
+          const { count: hwCount, error: hwCountError } = await supabase
             .from('homework')
-            .select('id')
-            .eq('user_id', user.id)
-            .limit(1);
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id);
             
-          if (hwTestError) {
-            console.error('Homework table access test failed:', hwTestError);
-            throw new Error(`Homework table access failed: ${hwTestError.message}`);
+          if (hwCountError) {
+            console.error('Homework count query failed:', hwCountError);
+            throw new Error(`Homework table access failed: ${hwCountError.message}`);
           }
           
-          console.log('Homework table access test successful:', hwTest);
+          console.log('Homework count query successful, count:', hwCount);
           
-          // Test calendar events table access
-          const { data: evTest, error: evTestError } = await supabase
-            .from('calendar_events')
-            .select('id')
-            .eq('user_id', user.id)
-            .limit(1);
-            
-          if (evTestError) {
-            console.error('Calendar events table access test failed:', evTestError);
-            throw new Error(`Calendar events table access failed: ${evTestError.message}`);
-          }
-          
-          console.log('Calendar events table access test successful:', evTest);
-          
-          // Test grades table access
-          const { data: grTest, error: grTestError } = await supabase
-            .from('grades')
-            .select('id')
-            .eq('user_id', user.id)
-            .limit(1);
-            
-          if (grTestError) {
-            console.error('Grades table access test failed:', grTestError);
-            throw new Error(`Grades table access failed: ${grTestError.message}`);
-          }
-          
-          console.log('Grades table access test successful:', grTest);
-          
-          console.log('All table access tests passed, proceeding with data loading...');
-          
-          // Homework
-          console.log('Starting homework query...');
+          // Now load the actual data
+          console.log('Loading homework data...');
           const { data: hwData, error: hwError } = await supabase
             .from('homework')
             .select('*')
@@ -155,7 +141,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             throw new Error(`Failed to load homework: ${hwError.message}`);
           }
           
-          console.log('Homework query completed, data:', hwData);
+          console.log('Homework data loaded:', hwData?.length || 0, 'items');
           
           if (hwData) {
             setHomework(
@@ -171,11 +157,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 submissionLink: hw.submission_link,
               }))
             );
-            console.log('Loaded homework:', hwData.length, 'items');
           }
 
-          // Calendar events
-          console.log('Starting calendar events query...');
+          // Load calendar events
+          console.log('Loading calendar events data...');
           const { data: evData, error: evError } = await supabase
             .from('calendar_events')
             .select('*')
@@ -187,7 +172,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             throw new Error(`Failed to load calendar events: ${evError.message}`);
           }
           
-          console.log('Calendar events query completed, data:', evData);
+          console.log('Calendar events data loaded:', evData?.length || 0, 'items');
           
           if (evData) {
             setCalendarEvents(
@@ -203,11 +188,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 preparationChecklist: ev.preparation_checklist,
               }))
             );
-            console.log('Loaded calendar events:', evData.length, 'items');
           }
 
-          // Grades
-          console.log('Starting grades query...');
+          // Load grades
+          console.log('Loading grades data...');
           const { data: grData, error: grError } = await supabase
             .from('grades')
             .select('*')
@@ -219,7 +203,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             throw new Error(`Failed to load grades: ${grError.message}`);
           }
           
-          console.log('Grades query completed, data:', grData);
+          console.log('Grades data loaded:', grData?.length || 0, 'items');
           
           if (grData) {
             setGrades(
@@ -236,10 +220,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 weight: g.weight,
               }))
             );
-            console.log('Loaded grades:', grData.length, 'items');
           }
           
-          console.log('Data loading completed successfully');
+          console.log('All data loaded successfully!');
         } catch (error) {
           console.error('Error loading data:', error);
           throw error;
