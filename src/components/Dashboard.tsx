@@ -2,17 +2,17 @@ import React from 'react';
 import { useStudy } from '../contexts/StudyContext';
 import { getNextUpcoming, getDaysLeft, isOverdue } from '../utils/dateUtils';
 import { calculateWeightedAverage } from '../utils/gradeUtils';
-import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
+import { useAuth } from '../contexts/AuthContext';
 import CountdownWidget from './widgets/CountdownWidget';
 import StatsWidget from './widgets/StatsWidget';
-import { BookOpen, Calendar, Trophy, Clock, CheckCircle } from 'lucide-react';
+import { BookOpen, Calendar, Trophy, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { homework, calendarEvents, grades } = useStudy();
+  const { homework, calendarEvents, grades, loading, error } = useStudy();
   const { user } = useAuth();
 
-  // Show loading state if user exists but data hasn't loaded yet
-  if (user && (!homework || !calendarEvents || !grades)) {
+  // Show loading state if data is still loading
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -23,23 +23,74 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // Show error state if data loading failed
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Data</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no data
+  if (!homework || !calendarEvents || !grades) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-400 text-6xl mb-4">📚</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Data Available</h2>
+          <p className="text-gray-600">Start by adding some homework, events, or grades to see your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate statistics
   const overdueHomework = homework.filter(hw => isOverdue(hw.dueDate));
   const upcomingHomework = homework.filter(hw => !isOverdue(hw.dueDate) && hw.status !== 'Completed' && hw.status !== 'Submitted');
   const completedHomework = homework.filter(hw => hw.status === 'Completed' || hw.status === 'Submitted');
   
-  const nextHomework = getNextUpcoming(upcomingHomework);
-  const nextExam = getNextUpcoming(calendarEvents.filter(event => event.eventType === 'Exam'));
+  const nextHomework = upcomingHomework.length > 0 ? upcomingHomework[0] : null;
+  const nextExam = calendarEvents.filter(event => event.eventType === 'Exam').length > 0 
+    ? calendarEvents.filter(event => event.eventType === 'Exam')[0] 
+    : null;
   
   const overallAverage = calculateWeightedAverage(grades);
   
   const upcomingDeadlines = [...upcomingHomework, ...calendarEvents]
-    .map(item => ({
-      ...item,
-      dueDate: item.dueDate || item.date,
-    }))
-    .filter(item => getDaysLeft(item.dueDate) <= 7)
-    .sort((a, b) => getDaysLeft(a.dueDate) - getDaysLeft(b.dueDate))
+    .map(item => {
+      if ('dueDate' in item) {
+        // This is a Homework item
+        return {
+          ...item,
+          displayDate: item.dueDate,
+          displayTitle: item.subject,
+          displayDescription: item.assignment,
+          type: 'homework' as const
+        };
+      } else {
+        // This is a CalendarEvent item
+        return {
+          ...item,
+          displayDate: item.date,
+          displayTitle: item.subject,
+          displayDescription: item.description,
+          type: 'event' as const
+        };
+      }
+    })
+    .filter(item => getDaysLeft(item.displayDate) <= 7)
+    .sort((a, b) => getDaysLeft(a.displayDate) - getDaysLeft(b.displayDate))
     .slice(0, 5);
 
   return (
@@ -137,7 +188,7 @@ const Dashboard: React.FC = () => {
         {upcomingDeadlines.length > 0 ? (
           <div className="space-y-3">
             {upcomingDeadlines.map((item, index) => {
-              const daysLeft = getDaysLeft(item.dueDate);
+              const daysLeft = getDaysLeft(item.displayDate);
               const isHomework = 'assignment' in item;
               
               return (
@@ -149,9 +200,9 @@ const Dashboard: React.FC = () => {
                       'bg-blue-500'
                     }`}></div>
                     <div>
-                      <p className="font-medium">{item.subject}</p>
+                      <p className="font-medium">{item.displayTitle}</p>
                       <p className="text-sm text-gray-600">
-                        {isHomework ? item.assignment : item.description}
+                        {item.displayDescription}
                       </p>
                     </div>
                   </div>
@@ -164,7 +215,7 @@ const Dashboard: React.FC = () => {
                       {daysLeft === 0 ? 'Today' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days`}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(item.dueDate).toLocaleDateString()}
+                      {new Date(item.displayDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>

@@ -8,6 +8,8 @@ interface StudyContextType {
   homework: Homework[];
   calendarEvents: CalendarEvent[];
   grades: Grade[];
+  loading: boolean;
+  error: string | null;
   addHomework: (hw: Homework) => void;
   updateHomework: (id: string, updates: Partial<Homework>) => void;
   deleteHomework: (id: string) => void;
@@ -26,23 +28,38 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [homework, setHomework] = useState<Homework[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
       setHomework([]);
       setCalendarEvents([]);
       setGrades([]);
+      setLoading(false);
+      setError(null);
       return;
     }
 
     const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
+        console.log('Loading data for user:', user.id);
+        
         // Homework
-        const { data: hwData } = await supabase
+        const { data: hwData, error: hwError } = await supabase
           .from('homework')
           .select('*')
           .eq('user_id', user.id)
           .order('due_date', { ascending: true });
+          
+        if (hwError) {
+          console.error('Error loading homework:', hwError);
+          throw new Error(`Failed to load homework: ${hwError.message}`);
+        }
+        
         if (hwData) {
           setHomework(
             hwData.map(hw => ({
@@ -57,14 +74,21 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               submissionLink: hw.submission_link,
             }))
           );
+          console.log('Loaded homework:', hwData.length, 'items');
         }
 
         // Calendar events
-        const { data: evData } = await supabase
+        const { data: evData, error: evError } = await supabase
           .from('calendar_events')
           .select('*')
           .eq('user_id', user.id)
           .order('date', { ascending: true });
+          
+        if (evError) {
+          console.error('Error loading calendar events:', evError);
+          throw new Error(`Failed to load calendar events: ${evError.message}`);
+        }
+        
         if (evData) {
           setCalendarEvents(
             evData.map(ev => ({
@@ -79,14 +103,21 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               preparationChecklist: ev.preparation_checklist,
             }))
           );
+          console.log('Loaded calendar events:', evData.length, 'items');
         }
 
         // Grades
-        const { data: grData } = await supabase
+        const { data: grData, error: grError } = await supabase
           .from('grades')
           .select('*')
           .eq('user_id', user.id)
           .order('date_graded', { ascending: false });
+          
+        if (grError) {
+          console.error('Error loading grades:', grError);
+          throw new Error(`Failed to load grades: ${grError.message}`);
+        }
+        
         if (grData) {
           setGrades(
             grData.map(g => ({
@@ -102,9 +133,15 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               weight: g.weight,
             }))
           );
+          console.log('Loaded grades:', grData.length, 'items');
         }
+        
+        console.log('Data loading completed successfully');
       } catch (error) {
         console.error('Error loading data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load data');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -316,6 +353,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     homework,
     calendarEvents,
     grades,
+    loading,
+    error,
     addHomework,
     updateHomework,
     deleteHomework,
