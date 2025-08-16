@@ -14,7 +14,7 @@ export interface CalendarEvent {
   id: string;
   date: string;
   time: string;
-  eventType: 'Exam' | 'Quiz' | 'Homework Due' | 'Project' | 'Assignment';
+  eventType: 'Exam' | 'Event';
   subject: string;
   description: string;
   location: string;

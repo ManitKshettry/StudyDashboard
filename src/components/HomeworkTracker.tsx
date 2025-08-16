@@ -13,7 +13,6 @@ const HomeworkTracker: React.FC = () => {
     subject: '',
     assignment: '',
     dueDate: '',
-    assignedDate: '',
     status: 'Not Started' as const,
     priority: 'Medium' as const,
     notes: '',
@@ -25,7 +24,6 @@ const HomeworkTracker: React.FC = () => {
       subject: '',
       assignment: '',
       dueDate: '',
-      assignedDate: '',
       status: 'Not Started',
       priority: 'Medium',
       notes: '',
@@ -38,11 +36,20 @@ const HomeworkTracker: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Make sure dueDate is not empty and is a valid date
+    if (!formData.dueDate) {
+      alert('Please select a valid due date');
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    
     if (editingId) {
-      updateHomework(editingId, formData);
+      updateHomework(editingId, { ...formData, assignedDate: today });
     } else {
       const newHomework = {
         ...formData,
+        assignedDate: today,
         id: Date.now().toString(),
       };
       addHomework(newHomework);
@@ -56,7 +63,6 @@ const HomeworkTracker: React.FC = () => {
       subject: hw.subject,
       assignment: hw.assignment,
       dueDate: hw.dueDate,
-      assignedDate: hw.assignedDate,
       status: hw.status,
       priority: hw.priority,
       notes: hw.notes,
@@ -151,16 +157,6 @@ const HomeworkTracker: React.FC = () => {
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Date</label>
-                <input
-                  type="date"
-                  value={formData.assignedDate}
-                  onChange={(e) => setFormData({ ...formData, assignedDate: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />

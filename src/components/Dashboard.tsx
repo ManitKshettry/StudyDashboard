@@ -61,35 +61,21 @@ const Dashboard: React.FC = () => {
   const completedHomework = homework.filter(hw => hw.status === 'Completed' || hw.status === 'Submitted');
   
   const nextHomework = upcomingHomework.length > 0 ? upcomingHomework[0] : null;
-  const nextExam = calendarEvents.filter(event => event.eventType === 'Exam').length > 0 
-    ? calendarEvents.filter(event => event.eventType === 'Exam')[0] 
-    : null;
+  const nextExam = calendarEvents
+    .filter(event => event.eventType === 'Exam' && !isOverdue(event.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] || null;
   
   const overallAverage = calculateWeightedAverage(grades);
   
-  const upcomingDeadlines = [...upcomingHomework, ...calendarEvents]
-    .map(item => {
-      if ('dueDate' in item) {
-        // This is a Homework item
-        return {
-          ...item,
-          displayDate: item.dueDate,
-          displayTitle: item.subject,
-          displayDescription: item.assignment,
-          type: 'homework' as const
-        };
-      } else {
-        // This is a CalendarEvent item
-        return {
-          ...item,
-          displayDate: item.date,
-          displayTitle: item.subject,
-          displayDescription: item.description,
-          type: 'event' as const
-        };
-      }
-    })
-    .filter(item => getDaysLeft(item.displayDate) <= 7)
+  const upcomingDeadlines = upcomingHomework
+    .map(item => ({
+      ...item,
+      displayDate: item.dueDate,
+      displayTitle: item.subject,
+      displayDescription: item.assignment,
+      type: 'homework' as const
+    }))
+    .filter(item => getDaysLeft(item.displayDate) <= 7 && !isOverdue(item.displayDate))
     .sort((a, b) => getDaysLeft(a.displayDate) - getDaysLeft(b.displayDate))
     .slice(0, 5);
 

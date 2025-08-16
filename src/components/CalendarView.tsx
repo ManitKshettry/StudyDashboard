@@ -11,7 +11,7 @@ const CalendarView: React.FC = () => {
   const [formData, setFormData] = useState({
     date: '',
     time: '',
-    eventType: 'Exam' as const,
+    eventType: 'Event' as 'Event' | 'Exam',
     subject: '',
     description: '',
     location: '',
@@ -93,22 +93,15 @@ const CalendarView: React.FC = () => {
   const getEventTypeColor = (eventType: string) => {
     switch (eventType) {
       case 'Exam': return 'bg-red-100 text-red-800 border-red-200';
-      case 'Quiz': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Homework Due': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Project': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Assignment': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Event': return 'bg-blue-100 text-blue-800 border-blue-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const sortedEvents = calendarEvents.sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    return dateA.getTime() - dateB.getTime();
-  });
-
-  const upcomingEvents = sortedEvents.filter(event => !isOverdue(event.date));
-  const pastEvents = sortedEvents.filter(event => isOverdue(event.date));
+  // Filter out overdue events and sort remaining ones by date
+  const upcomingEvents = calendarEvents
+    .filter(event => !isOverdue(event.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
     <div className="space-y-6">
@@ -153,7 +146,6 @@ const CalendarView: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                   placeholder="e.g., 10:00-12:00 or 23:59"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
                 />
               </div>
               <div>
@@ -164,19 +156,18 @@ const CalendarView: React.FC = () => {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="Exam">Exam</option>
-                  <option value="Quiz">Quiz</option>
-                  <option value="Homework Due">Homework Due</option>
-                  <option value="Project">Project</option>
-                  <option value="Assignment">Assignment</option>
+                  <option value="Event">Event</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject {formData.eventType === 'Exam' && <span className="text-red-500">*</span>}
+                </label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+                  required={formData.eventType === 'Exam'}
                 >
                   <option value="">Select Subject</option>
                   {SUBJECTS.map(subject => (
@@ -184,14 +175,14 @@ const CalendarView: React.FC = () => {
                   ))}
                 </select>
               </div>
-              <div>
+                            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input
-                  type="text"
+                <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Add any important details or notes"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+                  rows={3}
                 />
               </div>
               <div>
@@ -377,41 +368,7 @@ const CalendarView: React.FC = () => {
         )}
       </div>
 
-      {/* Past Events */}
-      {pastEvents.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-gray-600" />
-            <h2 className="text-xl font-semibold">Past Events</h2>
-          </div>
-          
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="space-y-2">
-              {pastEvents.slice(0, 5).map((event) => {
-                const subjectColor = SUBJECTS.find(s => s.name === event.subject)?.color || '#6B7280';
-                
-                return (
-                  <div key={event.id} className="flex items-center justify-between py-2 px-3 bg-white rounded border">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: subjectColor }}
-                      ></div>
-                      <div>
-                        <span className="font-medium">{event.subject}</span>
-                        <span className="text-gray-600 ml-2">{event.description}</span>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {formatDate(event.date)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+  {/* Past Events removed as requested */}
     </div>
   );
 };
