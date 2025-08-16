@@ -2,7 +2,7 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/85a1ee82-d902-4c97-8fef-bcab213b4750/deploy-status)](https://app.netlify.com/projects/phoebuz/deploys)
 
-👉 **Live Site:** [Try StudyDashboard Now]([(https://phoebuz.netlify.app/)])
+👉 **Live Site:** [Try StudyDashboard Now](https://phoebuz.netlify.app/)
 
 StudyDashboard is a comprehensive, student-friendly academic management application built to help you stay organized and on top of your studies. With homework tracking, grade management, calendar organization, and timetable planning — StudyDashboard is your all-in-one solution for academic success.
 
