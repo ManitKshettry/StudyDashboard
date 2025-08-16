@@ -35,6 +35,17 @@ export interface Grade {
   weight: number;
 }
 
+export interface TimetableEntry {
+  id: string;
+  day: string;
+  period: number;
+  subject: string;
+  teacher: string;
+  room: string;
+  startTime: string;
+  endTime: string;
+}
+
 export interface Subject {
   name: string;
   color: string;

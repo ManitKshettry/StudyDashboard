@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard';
 import HomeworkTracker from './components/HomeworkTracker';
 import CalendarView from './components/CalendarView';
 import GradesLog from './components/GradesLog';
-// ✅ Removed: import Timetable from './components/Timetable';
+import Timetable from './components/Timetable';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -17,7 +17,14 @@ const AppContent: React.FC = () => {
 
   // Loader while checking session
   if (loading) {
-    return <div className="p-8 text-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing application...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -25,13 +32,14 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="p-6">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'homework' && <HomeworkTracker />}
         {activeTab === 'calendar' && <CalendarView />}
         {activeTab === 'grades' && <GradesLog />}
+        {activeTab === 'timetable' && <Timetable />}
       </main>
     </div>
   );
