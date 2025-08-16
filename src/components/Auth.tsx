@@ -41,6 +41,13 @@ const Auth: React.FC = () => {
         setError(error.message);
       }
     } catch (err) {
+      setError('An unexpected error occurred during Google sign-in');
+    } finally {
+      setGoogleLoading(false);
+    }
+        setError(error.message);
+      }
+    } catch (err) {
       setError('Failed to sign in with Google');
     } finally {
       setGoogleLoading(false);

@@ -1,9 +1,11 @@
 // src/App.tsx
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { StudyProvider } from './contexts/StudyContext';
 
 import Auth from './components/Auth';
+import AuthCallback from './components/AuthCallback';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import HomeworkTracker from './components/HomeworkTracker';
@@ -27,7 +29,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!user) {
+  if (!user && window.location.pathname !== '/auth/callback') {
     return <Auth />;
   }
 
@@ -47,10 +49,15 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StudyProvider>
-        <AppContent />
-      </StudyProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <StudyProvider>
+          <Routes>
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/*" element={<AppContent />} />
+          </Routes>
+        </StudyProvider>
+      </AuthProvider>
+    </Router>
   );
 }
