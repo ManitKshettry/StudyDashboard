@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Mail, Lock, User, AlertCircle, Chrome } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const Auth: React.FC = () => {
   const { signIn, signUp, signInWithGoogle } = useAuth();
@@ -17,14 +18,27 @@ const Auth: React.FC = () => {
     setError(null);
 
     try {
+      console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email:`, email);
+      
       const { error } = isSignUp 
         ? await signUp(email, password)
         : await signIn(email, password);
 
       if (error) {
+        console.error('Auth error:', error);
         setError(error.message);
+        return;
+      }
+
+      // Check session immediately after sign in
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session after auth:', session ? 'Session exists' : 'No session');
+      
+      if (!session && !isSignUp) {
+        setError('Failed to establish session. Please try again.');
       }
     } catch (err) {
+      console.error('Unexpected auth error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
