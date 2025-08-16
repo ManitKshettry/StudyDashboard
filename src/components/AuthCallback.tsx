@@ -11,7 +11,34 @@ const AuthCallback = () => {
         console.log('Auth callback initiated...');
         console.log('Current URL:', window.location.href);
         
-        // First try to get the session
+        if (window.location.hash) {
+          console.log('Hash fragment detected, parsing auth data...');
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          const expiresIn = hashParams.get('expires_in');
+          
+          if (accessToken) {
+            console.log('Setting up session from hash parameters...');
+            const { data: { user }, error: setSessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || '',
+            });
+            
+            if (setSessionError) {
+              console.error('Error setting session:', setSessionError);
+              throw setSessionError;
+            }
+            
+            if (user) {
+              console.log('User authenticated successfully:', user.email);
+              navigate('/dashboard');
+              return;
+            }
+          }
+        }
+
+        // If we get here, try to get an existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -19,33 +46,11 @@ const AuthCallback = () => {
           throw sessionError;
         }
 
-        if (!session) {
-          console.log('No session found, attempting to exchange token...');
-          const params = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = params.get('access_token');
-          
-          if (accessToken) {
-            console.log('Found access token, setting session...');
-            const { error: setSessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: params.get('refresh_token') || '',
-            });
-            
-            if (setSessionError) {
-              console.error('Error setting session:', setSessionError);
-              throw setSessionError;
-            }
-          }
-        }
-
-        // Check session one more time
-        const { data: { session: finalSession } } = await supabase.auth.getSession();
-        
-        if (finalSession) {
-          console.log('Session established successfully');
+        if (session) {
+          console.log('Session found:', session.user.email);
           navigate('/dashboard');
         } else {
-          console.log('No session found after all attempts');
+          console.log('No valid session found');
           navigate('/auth');
         }
       } catch (err) {
