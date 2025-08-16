@@ -1,0 +1,15 @@
+[[redirects]]
+  from = "http://phoebuz.netlify.app/*"
+  to = "https://phoebuz.netlify.app/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

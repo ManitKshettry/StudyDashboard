@@ -7,12 +7,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
+// Enforce HTTPS in production
+if (typeof window !== 'undefined' && 
+    window.location.protocol === 'http:' && 
+    window.location.hostname === 'phoebuz.netlify.app') {
+  window.location.href = window.location.href.replace('http:', 'https:');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'implicit'
+    detectSessionInUrl: true
   },
   global: {
     headers: {
