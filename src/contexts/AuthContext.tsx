@@ -142,16 +142,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-      const signInWithGoogle = () => supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent'
+      const signInWithGoogle = async () => {
+    const redirectURL = `${window.location.origin}/auth/callback`;
+    console.log('Configuring Google sign-in with redirect URL:', redirectURL);
+    
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectURL,
+        skipBrowserRedirect: false
       }
-    }
-  });
+    });
+  };
 
   const signOut = async () => {
     try {

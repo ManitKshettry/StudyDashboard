@@ -36,11 +36,16 @@ const Auth: React.FC = () => {
     setError(null);
 
     try {
+      console.log('Starting Google sign-in process...');
+      console.log('Current URL:', window.location.href);
       const { error } = await signInWithGoogle();
       if (error) {
+        console.error('Google sign-in error:', error);
         throw error;
       }
+      console.log('Google sign-in successful, waiting for redirect...');
     } catch (err: any) {
+      console.error('Google sign-in error caught:', err);
       setError(err.message || 'An unexpected error occurred during Google sign-in');
     } finally {
       setGoogleLoading(false);

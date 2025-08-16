@@ -6,17 +6,33 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Error during auth callback:', error.message);
+    const handleCallback = async () => {
+      try {
+        console.log('Auth callback initiated...');
+        console.log('Current URL:', window.location.href);
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error in auth callback:', error);
+          navigate('/auth');
+          return;
+        }
+
+        if (session) {
+          console.log('Session established successfully');
+          navigate('/dashboard');
+        } else {
+          console.log('No session found in callback');
+          navigate('/auth');
+        }
+      } catch (err) {
+        console.error('Unexpected error in auth callback:', err);
         navigate('/auth');
-      } else {
-        navigate('/dashboard');
       }
     };
 
-    handleAuthCallback();
+    handleCallback();
   }, [navigate]);
 
   return (
