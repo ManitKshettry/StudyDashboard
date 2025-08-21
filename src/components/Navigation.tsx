@@ -32,7 +32,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
             <div className="flex-shrink-0 flex items-center">
               <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Phoebuz Dashboard
+                Phoebuz
               </h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
@@ -54,33 +54,33 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                   </button>
                 );
               })}
+              {/* Theme Toggle Button - Moved here */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 relative overflow-hidden group"
+                aria-label="Toggle theme"
+              >
+                <div className="relative w-5 h-5">
+                  <Sun
+                    className={`h-5 w-5 absolute transition-all duration-500 transform group-hover:rotate-[360deg] ${
+                      actualTheme === 'light'
+                        ? 'opacity-100 rotate-0 scale-100'
+                        : 'opacity-0 rotate-180 scale-75'
+                    }`}
+                  />
+                  <Moon
+                    className={`h-5 w-5 absolute transition-all duration-500 transform group-hover:rotate-[360deg] ${
+                      actualTheme === 'dark'
+                        ? 'opacity-100 rotate-0 scale-100'
+                        : 'opacity-0 -rotate-180 scale-75'
+                    }`}
+                  />
+                </div>
+              </button>
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative overflow-hidden"
-              aria-label="Toggle theme"
-            >
-              <div className="relative w-5 h-5">
-                <Sun
-                  className={`h-5 w-5 absolute transition-all duration-300 ${
-                    actualTheme === 'light'
-                      ? 'opacity-100 rotate-0 scale-100'
-                      : 'opacity-0 rotate-180 scale-75'
-                  }`}
-                />
-                <Moon
-                  className={`h-5 w-5 absolute transition-all duration-300 ${
-                    actualTheme === 'dark'
-                      ? 'opacity-100 rotate-0 scale-100'
-                      : 'opacity-0 -rotate-180 scale-75'
-                  }`}
-                />
-              </div>
-            </button>
 
             {/* User Info and Sign Out */}
             <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
