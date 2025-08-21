@@ -25,10 +25,6 @@ StudyDashboard is a comprehensive, student-friendly academic management applicat
 * Color-coded event types for easy organization
 * Never double-book or forget important dates
 
-###🌙 Smooth Sun/Moon Toggle: The navigation includes a smooth animated toggle that transitions between sun and moon icons
-
-*🎯 Auto-detect System Preference: Automatically detects and follows system dark mode       preference on first visit
-
 ### ⏰ Timetable Organizer
 * Plan your weekly class schedule
 * Visual weekly layout for better time management

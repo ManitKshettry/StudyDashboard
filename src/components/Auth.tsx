@@ -19,7 +19,8 @@ const Auth: React.FC = () => {
 
     try {
       console.log(`Attempting to ${isSignUp ? 'sign up' : 'sign in'} with email:`, email);
-      const { error } = isSignUp
+      
+      const { error } = isSignUp 
         ? await signUp(email, password)
         : await signIn(email, password);
 
@@ -51,14 +52,11 @@ const Auth: React.FC = () => {
     try {
       console.log('Starting Google sign-in process...');
       console.log('Current URL:', window.location.href);
-      
       const { error } = await signInWithGoogle();
-      
       if (error) {
         console.error('Google sign-in error:', error);
         throw error;
       }
-      
       console.log('Google sign-in successful, waiting for redirect...');
     } catch (err: any) {
       console.error('Google sign-in error caught:', err);
@@ -69,85 +67,72 @@ const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
         {/* Header */}
-        <div className="text-center">
-          <BookOpen className="mx-auto h-12 w-12 text-blue-600 dark:text-blue-400" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-            Phoebuz DashBoard
-          </h2>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <BookOpen className="h-10 w-10 text-blue-600" />
+            <span className="text-3xl font-bold text-gray-900">Phoebuz DashBoard</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {isSignUp ? 'Create your account' : 'Welcome back'}
-          </p>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">
-            {isSignUp
-              ? 'Start organizing your academic life today'
+          </h1>
+          <p className="text-gray-600">
+            {isSignUp 
+              ? 'Start organizing your academic life today' 
               : 'Sign in to access your study dashboard'
             }
           </p>
         </div>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow-xl rounded-lg sm:px-10 border dark:border-gray-700 transition-colors duration-200">
-          {/* Auth Form */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Google Sign In Button */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
-              className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {googleLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-700 dark:border-gray-300"></div>
-              ) : (
-                <>
-                  <Chrome className="h-5 w-5 mr-3 text-red-500" />
-                  Continue with Google
-                </>
-              )}
-            </button>
+        {/* Auth Form */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          {/* Google Sign In Button */}
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading || loading}
+            className="w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-6"
+          >
+            {googleLoading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-700"></div>
+            ) : (
+              <>
+                <Chrome className="h-5 w-5" />
+                Continue with Google
+              </>
+            )}
+          </button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                  Or continue with email
-                </span>
-              </div>
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
             </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            </div>
+          </div>
 
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
-                <div className="flex">
-                  <AlertCircle className="h-5 w-5 text-red-400 dark:text-red-300" />
-                  <div className="ml-3">
-                    <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-                  </div>
-                </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email address
               </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Enter your email"
                   required
                   disabled={loading || googleLoading}
@@ -156,21 +141,17 @@ const Auth: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -182,44 +163,51 @@ const Auth: React.FC = () => {
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
                 <>
-                  <User className="h-5 w-5 mr-2" />
+                  <User className="h-5 w-5" />
                   {isSignUp ? 'Create Account' : 'Sign In'}
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-6 text-center">
             <button
-              type="button"
               onClick={() => setIsSignUp(!isSignUp)}
               disabled={loading || googleLoading}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors disabled:opacity-50"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
-              {isSignUp
-                ? 'Already have an account? Sign in'
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
                 : "Don't have an account? Sign up"
               }
             </button>
           </div>
+        </div>
 
-          {/* Features Preview */}
-          <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-8">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-              What you'll get:
-            </h3>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-              <li>• Track homework with real-time countdowns</li>
-              <li>• Manage exams and important dates</li>
-              <li>• Log grades with performance analytics</li>
-            </ul>
-          </div>
+        {/* Features Preview */}
+        <div className="mt-8 bg-white/50 backdrop-blur-sm rounded-lg p-6">
+          <h3 className="font-semibold text-gray-900 mb-3">What you'll get:</h3>
+          <ul className="space-y-2 text-sm text-gray-600">
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              Track homework with real-time countdowns
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              Manage exams and important dates
+            </li>
+            <li className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              Log grades with performance analytics
+            </li>
+
+          </ul>
         </div>
       </div>
     </div>

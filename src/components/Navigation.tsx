@@ -1,7 +1,6 @@
 import React from 'react';
-import { Home, BookOpen, Calendar, Trophy, Clock, LogOut, Sun, Moon } from 'lucide-react';
+import { Home, BookOpen, Calendar, Trophy, Clock, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface NavigationProps {
   activeTab: string;
@@ -10,7 +9,6 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
   const { signOut, user } = useAuth();
-  const { actualTheme, toggleTheme } = useTheme();
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -25,72 +23,47 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
   };
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Phoebuz Dashboard
-              </h1>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-4 sm:items-center">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                      isActive
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 shadow-sm'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              })}
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-8 w-8 text-blue-600" />
+            <span className="text-xl font-bold text-gray-900">Phoebuz Dashboard</span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
               
-              {/* Theme Toggle Button - Moved next to navigation items */}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden md:inline">{item.label}</span>
+                </button>
+              );
+            })}
+            
+            <div className="ml-3 pl-3 border-l border-gray-200 flex items-center gap-2">
+              <span className="text-sm text-gray-600 hidden sm:inline">
+                {user?.email}
+              </span>
               <button
-                onClick={toggleTheme}
-                className="group p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative overflow-hidden ml-2"
-                aria-label="Toggle theme"
+                onClick={handleSignOut}
+                className="text-gray-600 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-gray-100"
+                title="Sign Out"
               >
-                <div className="relative w-5 h-5 transition-transform duration-500 group-hover:rotate-[360deg]">
-                  <Sun
-                    className={`h-5 w-5 absolute transition-all duration-300 ${
-                      actualTheme === 'light'
-                        ? 'opacity-100 rotate-0 scale-100'
-                        : 'opacity-0 rotate-180 scale-75'
-                    }`}
-                  />
-                  <Moon
-                    className={`h-5 w-5 absolute transition-all duration-300 ${
-                      actualTheme === 'dark'
-                        ? 'opacity-100 rotate-0 scale-100'
-                        : 'opacity-0 -rotate-180 scale-75'
-                    }`}
-                  />
-                </div>
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {/* User Info and Sign Out */}
-            <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
-            <button
-              onClick={handleSignOut}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-              title="Sign Out"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </div>

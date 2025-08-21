@@ -10,26 +10,26 @@ const AuthCallback = () => {
       try {
         console.log('Auth callback initiated...');
         console.log('Current URL:', window.location.href);
-
+        
         if (window.location.hash) {
           console.log('Hash fragment detected, parsing auth data...');
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
           const expiresIn = hashParams.get('expires_in');
-
+          
           if (accessToken) {
             console.log('Setting up session from hash parameters...');
             const { data: { user }, error: setSessionError } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || '',
             });
-
+            
             if (setSessionError) {
               console.error('Error setting session:', setSessionError);
               throw setSessionError;
             }
-
+            
             if (user) {
               console.log('User authenticated successfully:', user.email);
               navigate('/dashboard');
@@ -63,11 +63,9 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-200">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Processing authentication...</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <span className="ml-3 text-gray-600">Authenticating...</span>
     </div>
   );
 };
