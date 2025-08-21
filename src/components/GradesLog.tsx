@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DatePicker from 'react-datepicker';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
 import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
@@ -15,7 +16,7 @@ const GradesLog: React.FC = () => {
     type: 'Assignment' as const,
     maxMarks: '',
     marksObtained: '',
-    dateGraded: '',
+    dateGraded: new Date(),
     feedback: '',
     weight: '',
   });
@@ -27,7 +28,7 @@ const GradesLog: React.FC = () => {
       type: 'Assignment',
       maxMarks: '',
       marksObtained: '',
-      dateGraded: '',
+      dateGraded: new Date(),
       feedback: '',
       weight: '',
     });
@@ -38,8 +39,11 @@ const GradesLog: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const dateGradedString = formData.dateGraded.toISOString().split('T')[0];
+    
     const gradeData = {
       ...formData,
+      dateGraded: dateGradedString,
       maxMarks: parseInt(formData.maxMarks),
       marksObtained: parseInt(formData.marksObtained),
       weight: parseFloat(formData.weight),
@@ -66,7 +70,7 @@ const GradesLog: React.FC = () => {
       type: grade.type,
       maxMarks: grade.maxMarks.toString(),
       marksObtained: grade.marksObtained.toString(),
-      dateGraded: grade.dateGraded,
+      dateGraded: new Date(grade.dateGraded),
       feedback: grade.feedback,
       weight: grade.weight.toString(),
     });
@@ -197,12 +201,13 @@ const GradesLog: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date Graded</label>
-                <input
-                  type="date"
-                  value={formData.dateGraded}
-                  onChange={(e) => setFormData({ ...formData, dateGraded: e.target.value })}
+                <DatePicker
+                  selected={formData.dateGraded}
+                  onChange={(date) => setFormData({ ...formData, dateGraded: date || new Date() })}
+                  dateFormat="MMMM d, yyyy"
+                  placeholderText="Select graded date"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+                  maxDate={new Date()}
                 />
               </div>
               <div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DatePicker from 'react-datepicker';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
 import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
@@ -12,7 +13,7 @@ const HomeworkTracker: React.FC = () => {
   const [formData, setFormData] = useState({
     subject: '',
     assignment: '',
-    dueDate: '',
+    dueDate: new Date(),
     status: 'Not Started' as const,
     priority: 'Medium' as const,
     notes: '',
@@ -23,7 +24,7 @@ const HomeworkTracker: React.FC = () => {
     setFormData({
       subject: '',
       assignment: '',
-      dueDate: '',
+      dueDate: new Date(),
       status: 'Not Started',
       priority: 'Medium',
       notes: '',
@@ -36,19 +37,19 @@ const HomeworkTracker: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Make sure dueDate is not empty and is a valid date
-    if (!formData.dueDate) {
-      alert('Please select a valid due date');
-      return;
-    }
-
     const today = new Date().toISOString().split('T')[0];
+    const dueDateString = formData.dueDate.toISOString().split('T')[0];
     
     if (editingId) {
-      updateHomework(editingId, { ...formData, assignedDate: today });
+      updateHomework(editingId, { 
+        ...formData, 
+        dueDate: dueDateString,
+        assignedDate: today 
+      });
     } else {
       const newHomework = {
         ...formData,
+        dueDate: dueDateString,
         assignedDate: today,
         id: Date.now().toString(),
       };
@@ -62,7 +63,7 @@ const HomeworkTracker: React.FC = () => {
     setFormData({
       subject: hw.subject,
       assignment: hw.assignment,
-      dueDate: hw.dueDate,
+      dueDate: new Date(hw.dueDate),
       status: hw.status,
       priority: hw.priority,
       notes: hw.notes,
@@ -153,12 +154,16 @@ const HomeworkTracker: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <input
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                <DatePicker
+                  selected={formData.dueDate}
+                  onChange={(date) => setFormData({ ...formData, dueDate: date || new Date() })}
+                  showTimeSelect
+                  timeFormat="HH:mm"
+                  timeIntervals={15}
+                  dateFormat="MMMM d, yyyy h:mm aa"
+                  placeholderText="Select due date and time"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+                  minDate={new Date()}
                 />
               </div>
               <div>

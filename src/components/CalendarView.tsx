@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DatePicker from 'react-datepicker';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
 import { formatDate, getDaysLeft, isOverdue } from '../utils/dateUtils';
@@ -9,8 +10,8 @@ const CalendarView: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    date: '',
-    time: '',
+    date: new Date(),
+    time: new Date(),
     eventType: 'Event' as 'Event' | 'Exam',
     subject: '',
     description: '',
@@ -21,8 +22,8 @@ const CalendarView: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: '',
-      time: '',
+      date: new Date(),
+      time: new Date(),
       eventType: 'Exam',
       subject: '',
       description: '',
@@ -37,8 +38,17 @@ const CalendarView: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const dateString = formData.date.toISOString().split('T')[0];
+    const timeString = formData.time.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    
     const eventData = {
       ...formData,
+      date: dateString,
+      time: timeString,
       preparationChecklist: formData.preparationChecklist.filter(item => item.trim() !== ''),
     };
     
@@ -57,8 +67,8 @@ const CalendarView: React.FC = () => {
 
   const handleEdit = (event: any) => {
     setFormData({
-      date: event.date,
-      time: event.time,
+      date: new Date(event.date),
+      time: event.time ? new Date(`2000-01-01T${event.time}:00`) : new Date(),
       eventType: event.eventType,
       subject: event.subject,
       description: event.description,
@@ -130,21 +140,26 @@ const CalendarView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                <DatePicker
+                  selected={formData.date}
+                  onChange={(date) => setFormData({ ...formData, date: date || new Date() })}
+                  dateFormat="MMMM d, yyyy"
+                  placeholderText="Select event date"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
+                  minDate={new Date()}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <input
-                  type="text"
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  placeholder="e.g., 10:00-12:00 or 23:59"
+                <DatePicker
+                  selected={formData.time}
+                  onChange={(time) => setFormData({ ...formData, time: time || new Date() })}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  placeholderText="Select time"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
