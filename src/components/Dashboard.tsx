@@ -1,212 +1,211 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useStudy } from '../contexts/StudyContext';
-import { SUBJECTS } from '../types';
-import { Edit2, Save, X, Clock, MapPin, User } from 'lucide-react';
+import { getNextUpcoming, getDaysLeft, isOverdue } from '../utils/dateUtils';
+import { calculateWeightedAverage } from '../utils/gradeUtils';
+import { useAuth } from '../contexts/AuthContext';
+import CountdownWidget from './widgets/CountdownWidget';
+import StatsWidget from './widgets/StatsWidget';
+import { BookOpen, Calendar, Trophy, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8];
-const TIME_SLOTS = [
-  '8:00-8:45',
-  '8:45-9:30',
-  '9:30-10:15',
-  '10:15-11:00',
-  '11:15-12:00',
-  '12:00-12:45',
-  '1:30-2:15',
-  '2:15-3:00'
-];
+const Dashboard: React.FC = () => {
+  const { homework, calendarEvents, grades, loading, error } = useStudy();
+  const { user } = useAuth();
 
-const Timetable: React.FC = () => {
-  const { timetable, updateTimetable } = useStudy();
-  const [editingCell, setEditingCell] = useState<{ day: string; period: number } | null>(null);
-  const [editData, setEditData] = useState({
-    subject: '',
-    teacher: '',
-    room: '',
-    startTime: '',
-    endTime: '',
-  });
+  // Show loading state if data is still loading
+  if (loading) {
+    return (
+      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading your study data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const getTimetableEntry = (day: string, period: number) => {
-    return timetable.find(entry => entry.day === day && entry.period === period);
-  };
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
+            <div className="flex">
+              <AlertCircle className="h-5 w-5 text-red-400 dark:text-red-300" />
+              <div className="ml-3">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const handleEdit = (day: string, period: number) => {
-    const entry = getTimetableEntry(day, period);
-    if (entry) {
-      setEditData({
-        subject: entry.subject,
-        teacher: entry.teacher,
-        room: entry.room,
-        startTime: entry.startTime,
-        endTime: entry.endTime,
-      });
-    } else {
-      setEditData({
-        subject: '',
-        teacher: '',
-        room: '',
-        startTime: TIME_SLOTS[period - 1] || '',
-        endTime: '',
-      });
-    }
-    setEditingCell({ day, period });
-  };
+  // Get active homework and events
+  const activeHomework = homework.filter(hw => !['Completed', 'Submitted'].includes(hw.status));
+  const upcomingEvents = calendarEvents.filter(event => !isOverdue(event.date));
+  
+  // Calculate stats
+  const overallAverage = calculateWeightedAverage(grades);
+  const overdueHomework = homework.filter(hw => isOverdue(hw.dueDate) && !['Completed', 'Submitted'].includes(hw.status));
+  
+  // Get next upcoming items (homework and events combined)
+  const upcomingItems = [
+    ...activeHomework.map(hw => ({
+      ...hw,
+      displayTitle: hw.assignment,
+      displayDescription: hw.subject,
+      displayDate: hw.dueDate,
+      type: 'homework'
+    })),
+    ...upcomingEvents.map(event => ({
+      ...event,
+      displayTitle: event.subject || event.eventType,
+      displayDescription: event.description,
+      displayDate: event.date,
+      type: 'event'
+    }))
+  ].sort((a, b) => new Date(a.displayDate).getTime() - new Date(b.displayDate).getTime());
 
-  const handleSave = async () => {
-    if (!editingCell) return;
-    const { day, period } = editingCell;
+  const nextSevenDays = upcomingItems.filter(item => {
+    const daysLeft = getDaysLeft(item.displayDate);
+    return daysLeft >= 0 && daysLeft <= 7;
+  }).slice(0, 5);
 
-    // If all fields are empty, delete the entry
-    if (!editData.subject && !editData.teacher && !editData.room) {
-      await updateTimetable(day, period, null);
-    } else {
-      await updateTimetable(day, period, editData);
-    }
-    setEditingCell(null);
-  };
+  // Check if user has no data
+  const hasData = homework.length > 0 || calendarEvents.length > 0 || grades.length > 0;
 
-  const handleCancel = () => {
-    setEditingCell(null);
-    setEditData({
-      subject: '',
-      teacher: '',
-      room: '',
-      startTime: '',
-      endTime: '',
-    });
-  };
-
-  const getSubjectColor = (subject: string) => {
-    const subjectData = SUBJECTS.find(s => s.name === subject);
-    return subjectData?.color || '#6B7280';
-  };
+  if (!hasData) {
+    return (
+      <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center py-12">
+            <BookOpen className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No data yet</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Start by adding some homework, events, or grades to see your dashboard.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Timetable</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your weekly class schedule</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Welcome back! Here's your academic progress overview.
+          </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto transition-colors duration-200">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Period
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Time
-                </th>
-                {DAYS.map(day => (
-                  <th key={day} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {PERIODS.map(period => (
-                <tr key={period}>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {period}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {TIME_SLOTS[period - 1]}
-                  </td>
-                  {DAYS.map(day => {
-                    const entry = getTimetableEntry(day, period);
-                    const isEditing = editingCell?.day === day && editingCell?.period === period;
+        {/* Stats Widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatsWidget
+            title="Active Homework"
+            value={activeHomework.length}
+            icon={BookOpen}
+            color="blue"
+            subtitle={`${overdueHomework.length} overdue`}
+          />
+          <StatsWidget
+            title="Upcoming Events"
+            value={upcomingEvents.length}
+            icon={Calendar}
+            color="green"
+            subtitle="Next 30 days"
+          />
+          <StatsWidget
+            title="Overall Average"
+            value={overallAverage > 0 ? `${overallAverage}%` : 'N/A'}
+            icon={Trophy}
+            color="yellow"
+            subtitle={`Based on ${grades.length} grades`}
+          />
+          <StatsWidget
+            title="This Week"
+            value={nextSevenDays.length}
+            icon={Clock}
+            color="purple"
+            subtitle="Due items"
+          />
+        </div>
 
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Upcoming Deadlines */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Deadlines</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Next 7 days</p>
+            </div>
+            <div className="p-6">
+              {nextSevenDays.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">All caught up!</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    No pending homework<br/>
+                    No exams scheduled<br/>
+                    Enjoy the break!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {nextSevenDays.map((item, index) => {
+                    const daysLeft = getDaysLeft(item.displayDate);
                     return (
-                      <td key={day} className="px-4 py-4 whitespace-nowrap">
-                        {isEditing ? (
-                          <div className="space-y-1">
-                            <select
-                              value={editData.subject}
-                              onChange={(e) => setEditData({ ...editData, subject: e.target.value })}
-                              className="w-full p-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            >
-                              <option value="">Subject</option>
-                              {SUBJECTS.map(subject => (
-                                <option key={subject.name} value={subject.name}>{subject.name}</option>
-                              ))}
-                            </select>
-                            <input
-                              type="text"
-                              value={editData.teacher}
-                              onChange={(e) => setEditData({ ...editData, teacher: e.target.value })}
-                              placeholder="Teacher"
-                              className="w-full p-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                            />
-                            <input
-                              type="text"
-                              value={editData.room}
-                              onChange={(e) => setEditData({ ...editData, room: e.target.value })}
-                              placeholder="Room"
-                              className="w-full p-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                            />
-                            <div className="flex gap-1">
-                              <button
-                                onClick={handleSave}
-                                className="flex-1 p-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                              >
-                                <Save className="h-3 w-3 mx-auto" />
-                              </button>
-                              <button
-                                onClick={handleCancel}
-                                className="flex-1 p-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
-                              >
-                                <X className="h-3 w-3 mx-auto" />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={() => handleEdit(day, period)}
-                            className="min-h-16 p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                          >
-                            {entry ? (
-                              <div className="text-xs">
-                                <div
-                                  className="font-medium mb-1 text-gray-900 dark:text-white"
-                                  style={{ color: getSubjectColor(entry.subject) }}
-                                >
-                                  {entry.subject}
-                                </div>
-                                {entry.teacher && (
-                                  <div className="flex items-center text-gray-500 dark:text-gray-400 mb-1">
-                                    <User className="h-3 w-3 mr-1" />
-                                    {entry.teacher}
-                                  </div>
-                                )}
-                                {entry.room && (
-                                  <div className="flex items-center text-gray-500 dark:text-gray-400">
-                                    <MapPin className="h-3 w-3 mr-1" />
-                                    {entry.room}
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-400 dark:text-gray-600 flex items-center justify-center h-16">
-                                <Edit2 className="h-4 w-4" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {item.displayTitle}
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {item.displayDescription}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-medium ${
+                            daysLeft === 0 ? 'text-red-600 dark:text-red-400' : 
+                            daysLeft === 1 ? 'text-orange-600 dark:text-orange-400' : 
+                            'text-gray-900 dark:text-white'
+                          }`}>
+                            {daysLeft === 0 ? 'Today' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days`}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(item.displayDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
                     );
                   })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Countdown Widget */}
+          <CountdownWidget />
         </div>
+
+        {/* Additional Message */}
+        {nextSevenDays.length === 0 && (
+          <div className="mt-8 text-center">
+            <p className="text-gray-500 dark:text-gray-400">
+              No upcoming deadlines in the next 7 days
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default Timetable;
+export default Dashboard;
