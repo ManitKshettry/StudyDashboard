@@ -1,11 +1,198 @@
 import React, { useState } from 'react';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
+import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
 import { getDaysLeft, isOverdue, formatDate } from '../utils/dateUtils';
-import { Plus, Edit2, Trash2, ExternalLink, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, ExternalLink, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 
+// Time dropdown component
+interface TimePickerProps {
+  value: { hours: string; minutes: string; ampm: string };
+  onChange: (time: { hours: string; minutes: string; ampm: string }) => void;
+  className?: string;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className = '' }) => {
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const ampmOptions = ['AM', 'PM'];
+
+  return (
+    <div className={`flex gap-2 ${className}`}>
+      <select
+        value={value.hours}
+        onChange={(e) => onChange({ ...value, hours: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Hr</option>
+        {hours.map(hour => (
+          <option key={hour} value={hour}>{hour}</option>
+        ))}
+      </select>
+      <select
+        value={value.minutes}
+        onChange={(e) => onChange({ ...value, minutes: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Min</option>
+        {minutes.map(minute => (
+          <option key={minute} value={minute}>{minute}</option>
+        ))}
+      </select>
+      <select
+        value={value.ampm}
+        onChange={(e) => onChange({ ...value, ampm: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">AM/PM</option>
+        {ampmOptions.map(option => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+};
 const HomeworkTracker: React.FC = () => {
-  // ...[rest of the code remains unchanged up to the rendering section]...
+  const { homework, addHomework, updateHomework, deleteHomework } = useStudy();
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    subject: '',
+    assignment: '',
+    dueDate: '',
+    dueTime: { hours: '11', minutes: '59', ampm: 'PM' },
+    status: 'Not Started' as const,
+    priority: 'Medium' as const,
+    notes: '',
+    submissionLink: '',
+  });
+
+  const resetForm = () => {
+    setFormData({
+      subject: '',
+      assignment: '',
+      dueDate: '',
+      dueTime: { hours: '11', minutes: '59', ampm: 'PM' },
+      status: 'Not Started',
+      priority: 'Medium',
+      notes: '',
+      submissionLink: '',
+    });
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const formatTimeToString = (time: { hours: string; minutes: string; ampm: string }) => {
+    if (!time.hours || !time.minutes || !time.ampm) return '23:59';
+    
+    let hours24 = parseInt(time.hours);
+    if (time.ampm === 'PM' && hours24 !== 12) {
+      hours24 += 12;
+    } else if (time.ampm === 'AM' && hours24 === 12) {
+      hours24 = 0;
+    }
+    
+    return `${hours24.toString().padStart(2, '0')}:${time.minutes}`;
+  };
+
+  const parseTimeFromString = (timeString: string) => {
+    if (!timeString) return { hours: '11', minutes: '59', ampm: 'PM' };
+    
+    const [hours24Str, minutes] = timeString.split(':');
+    const hours24 = parseInt(hours24Str);
+    
+    let hours12 = hours24;
+    let ampm = 'AM';
+    
+    if (hours24 === 0) {
+      hours12 = 12;
+    } else if (hours24 > 12) {
+      hours12 = hours24 - 12;
+      ampm = 'PM';
+    } else if (hours24 === 12) {
+      ampm = 'PM';
+    }
+    
+    return {
+      hours: hours12.toString().padStart(2, '0'),
+      minutes: minutes || '00',
+      ampm
+    };
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const timeString = formatTimeToString(formData.dueTime);
+    const dueDateTimeString = `${formData.dueDate}T${timeString}:00`;
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (editingId) {
+      updateHomework(editingId, { 
+        ...formData, 
+        dueDate: dueDateTimeString,
+        assignedDate: today 
+      });
+    } else {
+      const newHomework = {
+        ...formData,
+        dueDate: dueDateTimeString,
+        assignedDate: today,
+        id: Date.now().toString(),
+      };
+      addHomework(newHomework);
+    }
+    
+    resetForm();
+  };
+
+  const handleEdit = (hw: any) => {
+    const hwDate = new Date(hw.dueDate);
+    const dateString = hwDate.toISOString().split('T')[0];
+    const timeString = hwDate.toTimeString().split(' ')[0].substring(0, 5);
+    
+    setFormData({
+      subject: hw.subject,
+      assignment: hw.assignment,
+      dueDate: dateString,
+      dueTime: parseTimeFromString(timeString),
+      status: hw.status,
+      priority: hw.priority,
+      notes: hw.notes,
+      submissionLink: hw.submissionLink || '',
+    });
+    setEditingId(hw.id);
+    setShowForm(true);
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'High': return 'bg-red-100 text-red-800 border-red-200';
+      case 'Medium': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'Low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Not Started': return 'bg-gray-100 text-gray-800';
+      case 'In Progress': return 'bg-blue-100 text-blue-800';
+      case 'Needs Revision': return 'bg-amber-100 text-amber-800';
+      case 'Completed': return 'bg-green-100 text-green-800';
+      case 'Submitted': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const sortedHomework = homework.sort((a, b) => {
+    // First sort by overdue status
+    const aOverdue = isOverdue(a.dueDate);
+    const bOverdue = isOverdue(b.dueDate);
+    if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+    
+    // Then by days left
+    return getDaysLeft(a.dueDate) - getDaysLeft(b.dueDate);
+  });
 
   return (
     <div className="space-y-6">
