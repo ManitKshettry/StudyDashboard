@@ -32,10 +32,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
             <div className="flex-shrink-0 flex items-center">
               <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                Phoebuz
+                Phoebuz Dashboard
               </h1>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-4 sm:items-center">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -54,22 +54,23 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                   </button>
                 );
               })}
-              {/* Theme Toggle Button - Moved here */}
+              
+              {/* Theme Toggle Button - Moved next to navigation items */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 relative overflow-hidden group"
+                className="group p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 relative overflow-hidden ml-2"
                 aria-label="Toggle theme"
               >
-                <div className="relative w-5 h-5">
+                <div className="relative w-5 h-5 transition-transform duration-500 group-hover:rotate-[360deg]">
                   <Sun
-                    className={`h-5 w-5 absolute transition-all duration-500 transform group-hover:rotate-[360deg] ${
+                    className={`h-5 w-5 absolute transition-all duration-300 ${
                       actualTheme === 'light'
                         ? 'opacity-100 rotate-0 scale-100'
                         : 'opacity-0 rotate-180 scale-75'
                     }`}
                   />
                   <Moon
-                    className={`h-5 w-5 absolute transition-all duration-500 transform group-hover:rotate-[360deg] ${
+                    className={`h-5 w-5 absolute transition-all duration-300 ${
                       actualTheme === 'dark'
                         ? 'opacity-100 rotate-0 scale-100'
                         : 'opacity-0 -rotate-180 scale-75'
@@ -81,7 +82,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
           </div>
 
           <div className="flex items-center space-x-4">
-
             {/* User Info and Sign Out */}
             <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
             <button
