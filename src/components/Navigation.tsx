@@ -27,7 +27,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
@@ -56,7 +56,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
               })}
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {/* Theme Toggle Button */}
             <button
@@ -65,36 +65,31 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
               aria-label="Toggle theme"
             >
               <div className="relative w-5 h-5">
-                <Sun 
+                <Sun
                   className={`h-5 w-5 absolute transition-all duration-300 ${
-                    actualTheme === 'light' 
-                      ? 'opacity-100 rotate-0 scale-100' 
+                    actualTheme === 'light'
+                      ? 'opacity-100 rotate-0 scale-100'
                       : 'opacity-0 rotate-180 scale-75'
-                  }`} 
+                  }`}
                 />
-                <Moon 
+                <Moon
                   className={`h-5 w-5 absolute transition-all duration-300 ${
-                    actualTheme === 'dark' 
-                      ? 'opacity-100 rotate-0 scale-100' 
+                    actualTheme === 'dark'
+                      ? 'opacity-100 rotate-0 scale-100'
                       : 'opacity-0 -rotate-180 scale-75'
-                  }`} 
+                  }`}
                 />
               </div>
             </button>
-
             {/* User Info and Sign Out */}
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-                title="Sign Out"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
+            <button
+              onClick={handleSignOut}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+              title="Sign Out"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>
