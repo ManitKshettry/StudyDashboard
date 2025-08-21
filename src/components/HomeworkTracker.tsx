@@ -1,11 +1,57 @@
 import React, { useState } from 'react';
-import DatePicker from 'react-datepicker';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
 import { useAuth } from '../contexts/AuthContext'; // ← ADD THIS LINE
 import { getDaysLeft, isOverdue, formatDate } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, ExternalLink, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 
+// Time dropdown component
+interface TimePickerProps {
+  value: { hours: string; minutes: string; ampm: string };
+  onChange: (time: { hours: string; minutes: string; ampm: string }) => void;
+  className?: string;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className = '' }) => {
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const ampmOptions = ['AM', 'PM'];
+
+  return (
+    <div className={`flex gap-2 ${className}`}>
+      <select
+        value={value.hours}
+        onChange={(e) => onChange({ ...value, hours: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Hr</option>
+        {hours.map(hour => (
+          <option key={hour} value={hour}>{hour}</option>
+        ))}
+      </select>
+      <select
+        value={value.minutes}
+        onChange={(e) => onChange({ ...value, minutes: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Min</option>
+        {minutes.map(minute => (
+          <option key={minute} value={minute}>{minute}</option>
+        ))}
+      </select>
+      <select
+        value={value.ampm}
+        onChange={(e) => onChange({ ...value, ampm: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">AM/PM</option>
+        {ampmOptions.map(option => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+};
 const HomeworkTracker: React.FC = () => {
   const { homework, addHomework, updateHomework, deleteHomework } = useStudy();
   const [showForm, setShowForm] = useState(false);
@@ -13,7 +59,8 @@ const HomeworkTracker: React.FC = () => {
   const [formData, setFormData] = useState({
     subject: '',
     assignment: '',
-    dueDate: new Date(),
+    dueDate: '',
+    dueTime: { hours: '11', minutes: '59', ampm: 'PM' },
     status: 'Not Started' as const,
     priority: 'Medium' as const,
     notes: '',
@@ -24,7 +71,8 @@ const HomeworkTracker: React.FC = () => {
     setFormData({
       subject: '',
       assignment: '',
-      dueDate: new Date(),
+      dueDate: '',
+      dueTime: { hours: '11', minutes: '59', ampm: 'PM' },
       status: 'Not Started',
       priority: 'Medium',
       notes: '',
@@ -34,22 +82,60 @@ const HomeworkTracker: React.FC = () => {
     setShowForm(false);
   };
 
+  const formatTimeToString = (time: { hours: string; minutes: string; ampm: string }) => {
+    if (!time.hours || !time.minutes || !time.ampm) return '23:59';
+    
+    let hours24 = parseInt(time.hours);
+    if (time.ampm === 'PM' && hours24 !== 12) {
+      hours24 += 12;
+    } else if (time.ampm === 'AM' && hours24 === 12) {
+      hours24 = 0;
+    }
+    
+    return `${hours24.toString().padStart(2, '0')}:${time.minutes}`;
+  };
+
+  const parseTimeFromString = (timeString: string) => {
+    if (!timeString) return { hours: '11', minutes: '59', ampm: 'PM' };
+    
+    const [hours24Str, minutes] = timeString.split(':');
+    const hours24 = parseInt(hours24Str);
+    
+    let hours12 = hours24;
+    let ampm = 'AM';
+    
+    if (hours24 === 0) {
+      hours12 = 12;
+    } else if (hours24 > 12) {
+      hours12 = hours24 - 12;
+      ampm = 'PM';
+    } else if (hours24 === 12) {
+      ampm = 'PM';
+    }
+    
+    return {
+      hours: hours12.toString().padStart(2, '0'),
+      minutes: minutes || '00',
+      ampm
+    };
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const timeString = formatTimeToString(formData.dueTime);
+    const dueDateTimeString = `${formData.dueDate}T${timeString}:00`;
     const today = new Date().toISOString().split('T')[0];
-    const dueDateString = formData.dueDate.toISOString().split('T')[0];
     
     if (editingId) {
       updateHomework(editingId, { 
         ...formData, 
-        dueDate: dueDateString,
+        dueDate: dueDateTimeString,
         assignedDate: today 
       });
     } else {
       const newHomework = {
         ...formData,
-        dueDate: dueDateString,
+        dueDate: dueDateTimeString,
         assignedDate: today,
         id: Date.now().toString(),
       };
@@ -60,10 +146,15 @@ const HomeworkTracker: React.FC = () => {
   };
 
   const handleEdit = (hw: any) => {
+    const hwDate = new Date(hw.dueDate);
+    const dateString = hwDate.toISOString().split('T')[0];
+    const timeString = hwDate.toTimeString().split(' ')[0].substring(0, 5);
+    
     setFormData({
       subject: hw.subject,
       assignment: hw.assignment,
-      dueDate: new Date(hw.dueDate),
+      dueDate: dateString,
+      dueTime: parseTimeFromString(timeString),
       status: hw.status,
       priority: hw.priority,
       notes: hw.notes,
@@ -154,16 +245,20 @@ const HomeworkTracker: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <DatePicker
-                  selected={formData.dueDate}
-                  onChange={(date) => setFormData({ ...formData, dueDate: date || new Date() })}
-                  showTimeSelect
-                  timeFormat="HH:mm"
-                  timeIntervals={15}
-                  dateFormat="MMMM d, yyyy h:mm aa"
-                  placeholderText="Select due date and time"
+                <input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  minDate={new Date()}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Time</label>
+                <TimePicker
+                  value={formData.dueTime}
+                  onChange={(time) => setFormData({ ...formData, dueTime: time })}
                 />
               </div>
               <div>

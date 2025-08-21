@@ -1,17 +1,63 @@
 import React, { useState } from 'react';
-import DatePicker from 'react-datepicker';
 import { useStudy } from '../contexts/StudyContext';
 import { SUBJECTS } from '../types';
 import { formatDate, getDaysLeft, isOverdue } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, Calendar, Clock, AlertCircle, CheckSquare } from 'lucide-react';
 
+// Time dropdown component
+interface TimePickerProps {
+  value: { hours: string; minutes: string; ampm: string };
+  onChange: (time: { hours: string; minutes: string; ampm: string }) => void;
+  className?: string;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className = '' }) => {
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+  const ampmOptions = ['AM', 'PM'];
+
+  return (
+    <div className={`flex gap-2 ${className}`}>
+      <select
+        value={value.hours}
+        onChange={(e) => onChange({ ...value, hours: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Hr</option>
+        {hours.map(hour => (
+          <option key={hour} value={hour}>{hour}</option>
+        ))}
+      </select>
+      <select
+        value={value.minutes}
+        onChange={(e) => onChange({ ...value, minutes: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">Min</option>
+        {minutes.map(minute => (
+          <option key={minute} value={minute}>{minute}</option>
+        ))}
+      </select>
+      <select
+        value={value.ampm}
+        onChange={(e) => onChange({ ...value, ampm: e.target.value })}
+        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      >
+        <option value="">AM/PM</option>
+        {ampmOptions.map(option => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+};
 const CalendarView: React.FC = () => {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useStudy();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    date: new Date(),
-    time: new Date(),
+    date: '',
+    time: { hours: '09', minutes: '00', ampm: 'AM' },
     eventType: 'Event' as 'Event' | 'Exam',
     subject: '',
     description: '',
@@ -22,8 +68,8 @@ const CalendarView: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: new Date(),
-      time: new Date(),
+      date: '',
+      time: { hours: '09', minutes: '00', ampm: 'AM' },
       eventType: 'Exam',
       subject: '',
       description: '',
@@ -35,19 +81,51 @@ const CalendarView: React.FC = () => {
     setShowForm(false);
   };
 
+  const formatTimeToString = (time: { hours: string; minutes: string; ampm: string }) => {
+    if (!time.hours || !time.minutes || !time.ampm) return '09:00';
+    
+    let hours24 = parseInt(time.hours);
+    if (time.ampm === 'PM' && hours24 !== 12) {
+      hours24 += 12;
+    } else if (time.ampm === 'AM' && hours24 === 12) {
+      hours24 = 0;
+    }
+    
+    return `${hours24.toString().padStart(2, '0')}:${time.minutes}`;
+  };
+
+  const parseTimeFromString = (timeString: string) => {
+    if (!timeString) return { hours: '09', minutes: '00', ampm: 'AM' };
+    
+    const [hours24Str, minutes] = timeString.split(':');
+    const hours24 = parseInt(hours24Str);
+    
+    let hours12 = hours24;
+    let ampm = 'AM';
+    
+    if (hours24 === 0) {
+      hours12 = 12;
+    } else if (hours24 > 12) {
+      hours12 = hours24 - 12;
+      ampm = 'PM';
+    } else if (hours24 === 12) {
+      ampm = 'PM';
+    }
+    
+    return {
+      hours: hours12.toString().padStart(2, '0'),
+      minutes: minutes || '00',
+      ampm
+    };
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const dateString = formData.date.toISOString().split('T')[0];
-    const timeString = formData.time.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const timeString = formatTimeToString(formData.time);
     
     const eventData = {
       ...formData,
-      date: dateString,
+      date: formData.date,
       time: timeString,
       preparationChecklist: formData.preparationChecklist.filter(item => item.trim() !== ''),
     };
@@ -67,8 +145,8 @@ const CalendarView: React.FC = () => {
 
   const handleEdit = (event: any) => {
     setFormData({
-      date: new Date(event.date),
-      time: event.time ? new Date(`2000-01-01T${event.time}:00`) : new Date(),
+      date: event.date,
+      time: parseTimeFromString(event.time),
       eventType: event.eventType,
       subject: event.subject,
       description: event.description,
@@ -140,27 +218,20 @@ const CalendarView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <DatePicker
-                  selected={formData.date}
-                  onChange={(date) => setFormData({ ...formData, date: date || new Date() })}
-                  dateFormat="MMMM d, yyyy"
-                  placeholderText="Select event date"
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  minDate={new Date()}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                <DatePicker
-                  selected={formData.time}
-                  onChange={(time) => setFormData({ ...formData, time: time || new Date() })}
-                  showTimeSelect
-                  showTimeSelectOnly
-                  timeIntervals={15}
-                  timeCaption="Time"
-                  dateFormat="h:mm aa"
-                  placeholderText="Select time"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                <TimePicker
+                  value={formData.time}
+                  onChange={(time) => setFormData({ ...formData, time })}
                 />
               </div>
               <div>
