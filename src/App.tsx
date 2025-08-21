@@ -1,9 +1,8 @@
-// src/App.tsx
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { StudyProvider } from './contexts/StudyContext';
-
+import { ThemeProvider } from './contexts/ThemeContext';
 import Auth from './components/Auth';
 import AuthCallback from './components/AuthCallback';
 import Navigation from './components/Navigation';
@@ -20,44 +19,63 @@ const AppContent: React.FC = () => {
   // Loader while checking session
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing application...</p>
+          <p className="text-gray-600 dark:text-gray-400">Initializing application...</p>
         </div>
       </div>
     );
   }
 
-  if (!user && window.location.pathname !== '/auth/callback') {
-    return <Auth />;
+  // Show auth page if user is not authenticated
+  if (!user) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="*" element={<Auth />} />
+        </Routes>
+      </Router>
+    );
   }
 
+  // Main app with navigation
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'homework':
+        return <HomeworkTracker />;
+      case 'calendar':
+        return <CalendarView />;
+      case 'grades':
+        return <GradesLog />;
+      case 'timetable':
+        return <Timetable />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="p-6">
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'homework' && <HomeworkTracker />}
-        {activeTab === 'calendar' && <CalendarView />}
-        {activeTab === 'grades' && <GradesLog />}
-        {activeTab === 'timetable' && <Timetable />}
+      <main className="transition-colors duration-200">
+        {renderActiveTab()}
       </main>
     </div>
   );
 };
 
-export default function App() {
+const App: React.FC = () => {
   return (
-    <Router>
+    <ThemeProvider>
       <AuthProvider>
         <StudyProvider>
-          <Routes>
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/*" element={<AppContent />} />
-          </Routes>
+          <AppContent />
         </StudyProvider>
       </AuthProvider>
-    </Router>
+    </ThemeProvider>
   );
-}
+};
+
+export default App;
