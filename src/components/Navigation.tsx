@@ -81,6 +81,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                 />
               </div>
             </button>
+
             {/* User Info and Sign Out */}
             <span className="text-sm text-gray-700 dark:text-gray-300">{user?.email}</span>
             <button
